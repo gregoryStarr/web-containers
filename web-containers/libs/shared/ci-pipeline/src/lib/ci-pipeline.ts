@@ -88,8 +88,6 @@ export class CIPipelineOrchestrator {
       if (stage.name === 'install') {
         this.logger?.(`📦 Installing dependencies...`);
       }
-        }, 5000); // Log every 5 seconds
-      }
 
       try {
         const result = await this.executeStage(stage);
