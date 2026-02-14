@@ -84,28 +84,15 @@ export class CIPipelineOrchestrator {
 
       this.logger?.(`🔄 Starting ${stage.name} stage...`);
 
-      // Add progress monitoring for long-running commands
-      let progressInterval: NodeJS.Timeout | undefined;
+      // Log start of install
       if (stage.name === 'install') {
-        this.logger?.(`📦 Installing dependencies... 0 loaded deps`);
-        // Start a progress indicator that counts installed packages
-        progressInterval = setInterval(async () => {
-          try {
-            // Count installed packages by counting directories in node_modules using Node.js
-            const countResult = await this.manager.captureOutput('node', ['-e', "try { console.log(require('fs').readdirSync('node_modules').length); } catch(e) { console.log(0); }"]);
-            const cleanResult = countResult.trim().replace(/\[[0-9;]*m/g, '');
-            const packageCount = Math.max(0, parseInt(cleanResult) || 0);
-            this.logger?.(`⏳ Installing dependencies (in progress...) ${packageCount} loaded deps`);
-          } catch (error) {
-            // Ignore errors, keep showing 0
-            this.logger?.(`⏳ Installing dependencies (in progress...) 0 loaded deps`);
-          }
+        this.logger?.(`📦 Installing dependencies...`);
+      }
         }, 5000); // Log every 5 seconds
       }
 
       try {
         const result = await this.executeStage(stage);
-        if (progressInterval) clearInterval(progressInterval);
         this.logger?.(`✅ ${stage.name} completed in ${result.duration}ms (Exit code: ${result.exitCode})`);
 
         if (result.stdout) {
@@ -130,7 +117,6 @@ export class CIPipelineOrchestrator {
           this.logger?.(`✅ ${stage.name} succeeded`);
         }
       } catch (error) {
-        if (progressInterval) clearInterval(progressInterval);
         this.logger?.(`💥 ${stage.name} threw exception: ${error}`);
         results.push({
           stage: key,
