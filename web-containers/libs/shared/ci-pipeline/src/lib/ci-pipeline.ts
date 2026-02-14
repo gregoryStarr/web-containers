@@ -72,12 +72,12 @@ export class CIPipelineOrchestrator {
         timeout: key === 'install' ? 300000 : key === 'build' ? 600000 : key === 'test' ? 900000 : 1200000,
       };
 
-      // Use npm ci with json output for progress tracking
+      // Use npm ci for install stage
       if (key === 'install' && !stageConfig) {
         stage = {
           name: 'install',
           command: 'npm',
-          args: ['ci', '--json'],
+          args: ['ci'],
           timeout: 300000,
         };
       }
