@@ -84,8 +84,19 @@ export class CIPipelineOrchestrator {
         timeout: key === 'install' ? 300000 : key === 'build' ? 600000 : key === 'test' ? 900000 : 1200000,
       };
 
-      // Use yarn install for install stage
+      // Use yarn install for install stage, or skip if already installed
       if (key === 'install' && !stageConfig) {
+        // Check if dependencies are already installed
+        try {
+          const checkResult = await this.manager.captureOutput('node', ['-e', "try { require('express'); console.log('installed'); } catch(e) { console.log('not installed'); }"]);
+          if (checkResult.trim() === 'installed') {
+            // Skip install if key package is available
+            this.logger?.(`📦 Dependencies already installed, skipping install step`);
+            continue; // Skip this stage
+          }
+        } catch (error) {
+          // If check fails, proceed with install
+        }
         stage = {
           name: 'install',
           command: 'yarn',
