@@ -41,11 +41,23 @@ export class CIPipelineOrchestrator {
     this.aborted = false;
 
     const stages = [
-      { key: 'install', defaultCommand: 'npm', defaultArgs: ['install'] },
+      { key: 'install', defaultCommand: 'yarn', defaultArgs: ['install'] },
       { key: 'build', defaultCommand: 'npm', defaultArgs: ['run', 'build'] },
       { key: 'test', defaultCommand: 'npm', defaultArgs: ['test'] },
       { key: 'mutation', defaultCommand: 'npx', defaultArgs: ['stryker', 'run'] },
     ];
+
+    // Log pipeline steps
+    const stepNames = stages.map(s => {
+      switch(s.key) {
+        case 'install': return 'Install dependencies';
+        case 'build': return 'Build project';
+        case 'test': return 'Run tests';
+        case 'mutation': return 'Run mutation tests';
+        default: return s.key;
+      }
+    });
+    this.logger?.(`🚀 Starting CI pipeline: ${stepNames.join(' → ')}`);
 
     for (const { key, defaultCommand, defaultArgs } of stages) {
       if (this.aborted) {
@@ -82,7 +94,11 @@ export class CIPipelineOrchestrator {
         };
       }
 
-      this.logger?.(`🔄 Starting ${stage.name} stage...`);
+      const stepName = key === 'install' ? 'Install dependencies' :
+                      key === 'build' ? 'Build project' :
+                      key === 'test' ? 'Run tests' :
+                      key === 'mutation' ? 'Run mutation tests' : stage.name;
+      this.logger?.(`🔄 Starting: ${stepName}`);
 
       // Log start of install
       if (stage.name === 'install') {
@@ -109,10 +125,14 @@ export class CIPipelineOrchestrator {
 
         // Abort on failure unless it's mutation test (optional)
         if (!result.success && key !== 'mutation') {
-          this.logger?.(`❌ ${stage.name} failed, aborting pipeline`);
+          this.logger?.(`❌ Failed: ${stage.name}, aborting pipeline`);
           this.aborted = true;
         } else if (result.success) {
-          this.logger?.(`✅ ${stage.name} succeeded`);
+          const stepName = key === 'install' ? 'Install dependencies' :
+                          key === 'build' ? 'Build project' :
+                          key === 'test' ? 'Run tests' :
+                          key === 'mutation' ? 'Run mutation tests' : stage.name;
+          this.logger?.(`✅ Completed: ${stepName}`);
         }
       } catch (error) {
         this.logger?.(`💥 ${stage.name} threw exception: ${error}`);
