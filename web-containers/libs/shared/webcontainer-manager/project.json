@@ -1,0 +1,36 @@
+{
+  "name": "@org/webcontainer-manager",
+  "$schema": "../../../node_modules/nx/schemas/project-schema.json",
+  "sourceRoot": "libs/shared/webcontainer-manager/src",
+  "projectType": "library",
+  "tags": ["scope:shared", "type:data-access"],
+  "targets": {
+    "build": {
+      "executor": "@nx/rollup:rollup",
+      "outputs": ["{options.outputPath}"],
+      "options": {
+        "main": "libs/shared/webcontainer-manager/src/index.ts",
+        "tsConfig": "libs/shared/webcontainer-manager/tsconfig.lib.json",
+        "outputPath": "libs/shared/webcontainer-manager/dist",
+        "format": ["esm"],
+        "assets": [
+          {
+            "glob": "libs/shared/webcontainer-manager/README.md",
+            "input": ".",
+            "output": "."
+          }
+        ]
+      }
+    },
+    "lint": {
+      "executor": "@nx/eslint:lint"
+    },
+    "test": {
+      "executor": "@nx/vitest:vitest",
+      "outputs": ["{options.reportsDirectory}"],
+      "options": {
+        "config": "libs/shared/webcontainer-manager/vitest.config.ts"
+      }
+    }
+  }
+}

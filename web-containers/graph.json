@@ -1,0 +1,2932 @@
+{
+  "graph": {
+    "nodes": {
+      "@org/shop-feature-product-detail": {
+        "name": "@org/shop-feature-product-detail",
+        "type": "lib",
+        "data": {
+          "root": "libs/shop/feature-product-detail",
+          "targets": {
+            "typecheck": {
+              "cache": true,
+              "inputs": [
+                "production",
+                "^production",
+                {
+                  "externalDependencies": [
+                    "typescript"
+                  ]
+                }
+              ],
+              "options": {
+                "cwd": "libs/shop/feature-product-detail",
+                "command": "tsc --noEmit -p tsconfig.lib.json"
+              },
+              "metadata": {
+                "technologies": [
+                  "typescript",
+                  "typescript"
+                ],
+                "description": "Runs type-checking for the project.",
+                "help": {
+                  "command": "npx tsc -p tsconfig.lib.json --help",
+                  "example": {
+                    "options": {
+                      "noEmit": true
+                    }
+                  }
+                }
+              },
+              "executor": "nx:run-commands",
+              "configurations": {},
+              "parallelism": true
+            },
+            "lint": {
+              "cache": true,
+              "options": {
+                "cwd": "libs/shop/feature-product-detail",
+                "command": "eslint ."
+              },
+              "inputs": [
+                "default",
+                "^default",
+                "{workspaceRoot}/eslint.config.mjs",
+                "{workspaceRoot}/libs/shop/feature-product-detail/eslint.config.mjs",
+                "{workspaceRoot}/tools/eslint-rules/**/*",
+                {
+                  "externalDependencies": [
+                    "eslint"
+                  ]
+                }
+              ],
+              "outputs": [
+                "{options.outputFile}"
+              ],
+              "metadata": {
+                "technologies": [
+                  "eslint"
+                ],
+                "description": "Runs ESLint on project",
+                "help": {
+                  "command": "npx eslint --help",
+                  "example": {
+                    "options": {
+                      "max-warnings": 0
+                    }
+                  }
+                }
+              },
+              "executor": "nx:run-commands",
+              "configurations": {},
+              "parallelism": true
+            },
+            "test": {
+              "cache": true,
+              "inputs": [
+                "default",
+                "^production",
+                {
+                  "externalDependencies": [
+                    "vitest"
+                  ]
+                },
+                {
+                  "env": "CI"
+                }
+              ],
+              "outputs": [
+                "{projectRoot}/test-output/vitest/coverage"
+              ],
+              "metadata": {
+                "technologies": [
+                  "vite",
+                  "vitest"
+                ],
+                "description": "Run Vitest tests",
+                "help": {
+                  "command": "npx vitest --help",
+                  "example": {
+                    "options": {
+                      "bail": 1,
+                      "coverage": true
+                    }
+                  }
+                }
+              },
+              "executor": "nx:run-commands",
+              "options": {
+                "cwd": "libs/shop/feature-product-detail",
+                "command": "vitest"
+              },
+              "configurations": {},
+              "parallelism": true,
+              "dependsOn": [
+                "^build"
+              ]
+            },
+            "build-deps": {
+              "dependsOn": [
+                "^build"
+              ],
+              "configurations": {},
+              "options": {},
+              "parallelism": true,
+              "executor": "nx:noop"
+            },
+            "watch-deps": {
+              "continuous": true,
+              "dependsOn": [
+                "build-deps"
+              ],
+              "executor": "nx:run-commands",
+              "options": {
+                "command": "npx nx watch --projects @org/shop-feature-product-detail --includeDependentProjects -- npx nx build-deps @org/shop-feature-product-detail"
+              },
+              "configurations": {},
+              "parallelism": true
+            }
+          },
+          "metadata": {},
+          "projectType": "library",
+          "name": "@org/shop-feature-product-detail",
+          "implicitDependencies": [],
+          "tags": []
+        }
+      },
+      "@org/webcontainer-manager": {
+        "name": "@org/webcontainer-manager",
+        "type": "lib",
+        "data": {
+          "root": "libs/shared/webcontainer-manager",
+          "targets": {
+            "typecheck": {
+              "dependsOn": [
+                "build",
+                "^typecheck"
+              ],
+              "options": {
+                "cwd": "libs/shared/webcontainer-manager",
+                "command": "tsc --build --emitDeclarationOnly"
+              },
+              "cache": true,
+              "inputs": [
+                "{projectRoot}/package.json",
+                "{workspaceRoot}/tsconfig.base.json",
+                "{projectRoot}/tsconfig.json",
+                "{projectRoot}/tsconfig.lib.json",
+                "{projectRoot}/src/**/*.ts",
+                "^production"
+              ],
+              "outputs": [
+                "{projectRoot}/dist/**/*.d.ts",
+                "{projectRoot}/dist/**/*.d.ts.map",
+                "{projectRoot}/dist/tsconfig.lib.tsbuildinfo"
+              ],
+              "syncGenerators": [
+                "@nx/js:typescript-sync"
+              ],
+              "metadata": {
+                "technologies": [
+                  "typescript"
+                ],
+                "description": "Runs type-checking for the project.",
+                "help": {
+                  "command": "npx tsc --build --help",
+                  "example": {
+                    "args": [
+                      "--force"
+                    ]
+                  }
+                }
+              },
+              "executor": "nx:run-commands",
+              "configurations": {},
+              "parallelism": true
+            },
+            "build": {
+              "executor": "@nx/rollup:rollup",
+              "outputs": [
+                "{options.outputPath}"
+              ],
+              "options": {
+                "main": "libs/shared/webcontainer-manager/src/index.ts",
+                "tsConfig": "libs/shared/webcontainer-manager/tsconfig.lib.json",
+                "outputPath": "libs/shared/webcontainer-manager/dist",
+                "format": [
+                  "esm"
+                ],
+                "assets": [
+                  {
+                    "glob": "libs/shared/webcontainer-manager/README.md",
+                    "input": ".",
+                    "output": "."
+                  }
+                ]
+              },
+              "configurations": {},
+              "parallelism": true
+            },
+            "build-deps": {
+              "dependsOn": [
+                "^build"
+              ],
+              "configurations": {},
+              "options": {},
+              "parallelism": true,
+              "executor": "nx:noop"
+            },
+            "watch-deps": {
+              "continuous": true,
+              "dependsOn": [
+                "build-deps"
+              ],
+              "executor": "nx:run-commands",
+              "options": {
+                "command": "npx nx watch --projects @org/webcontainer-manager --includeDependentProjects -- npx nx build-deps @org/webcontainer-manager"
+              },
+              "configurations": {},
+              "parallelism": true
+            },
+            "lint": {
+              "executor": "@nx/eslint:lint",
+              "options": {},
+              "configurations": {},
+              "parallelism": true
+            },
+            "test": {
+              "executor": "@nx/vitest:vitest",
+              "outputs": [
+                "{options.reportsDirectory}"
+              ],
+              "options": {
+                "config": "libs/shared/webcontainer-manager/vitest.config.ts"
+              },
+              "configurations": {},
+              "parallelism": true,
+              "dependsOn": [
+                "^build"
+              ]
+            }
+          },
+          "name": "@org/webcontainer-manager",
+          "tags": [
+            "npm:private",
+            "scope:shared",
+            "type:data-access"
+          ],
+          "metadata": {
+            "targetGroups": {},
+            "js": {
+              "packageName": "@org/webcontainer-manager",
+              "packageVersion": "0.0.1",
+              "packageExports": {
+                "./package.json": "./package.json",
+                ".": {
+                  "@org/source": "./src/index.ts",
+                  "types": "./dist/index.d.ts",
+                  "import": "./dist/index.js",
+                  "default": "./dist/index.js"
+                }
+              },
+              "packageMain": "./dist/index.js",
+              "isInPackageManagerWorkspaces": false
+            }
+          },
+          "$schema": "../../../node_modules/nx/schemas/project-schema.json",
+          "sourceRoot": "libs/shared/webcontainer-manager/src",
+          "projectType": "library",
+          "implicitDependencies": []
+        }
+      },
+      "@org/github-integration": {
+        "name": "@org/github-integration",
+        "type": "lib",
+        "data": {
+          "root": "libs/shared/github-integration",
+          "targets": {
+            "typecheck": {
+              "dependsOn": [
+                "build",
+                "^typecheck"
+              ],
+              "options": {
+                "cwd": "libs/shared/github-integration",
+                "command": "tsc --build --emitDeclarationOnly"
+              },
+              "cache": true,
+              "inputs": [
+                "{projectRoot}/package.json",
+                "{workspaceRoot}/tsconfig.base.json",
+                "{projectRoot}/tsconfig.json",
+                "{projectRoot}/tsconfig.lib.json",
+                "{projectRoot}/src/**/*.ts",
+                "^production"
+              ],
+              "outputs": [
+                "{projectRoot}/dist/**/*.d.ts",
+                "{projectRoot}/dist/**/*.d.ts.map",
+                "{projectRoot}/dist/tsconfig.lib.tsbuildinfo"
+              ],
+              "syncGenerators": [
+                "@nx/js:typescript-sync"
+              ],
+              "metadata": {
+                "technologies": [
+                  "typescript"
+                ],
+                "description": "Runs type-checking for the project.",
+                "help": {
+                  "command": "npx tsc --build --help",
+                  "example": {
+                    "args": [
+                      "--force"
+                    ]
+                  }
+                }
+              },
+              "executor": "nx:run-commands",
+              "configurations": {},
+              "parallelism": true
+            },
+            "build": {
+              "executor": "@nx/rollup:rollup",
+              "outputs": [
+                "{options.outputPath}"
+              ],
+              "options": {
+                "main": "libs/shared/github-integration/src/index.ts",
+                "tsConfig": "libs/shared/github-integration/tsconfig.lib.json",
+                "outputPath": "libs/shared/github-integration/dist",
+                "format": [
+                  "esm"
+                ],
+                "assets": [
+                  {
+                    "glob": "libs/shared/github-integration/README.md",
+                    "input": ".",
+                    "output": "."
+                  }
+                ]
+              },
+              "configurations": {},
+              "parallelism": true
+            },
+            "build-deps": {
+              "dependsOn": [
+                "^build"
+              ],
+              "configurations": {},
+              "options": {},
+              "parallelism": true,
+              "executor": "nx:noop"
+            },
+            "watch-deps": {
+              "continuous": true,
+              "dependsOn": [
+                "build-deps"
+              ],
+              "executor": "nx:run-commands",
+              "options": {
+                "command": "npx nx watch --projects @org/github-integration --includeDependentProjects -- npx nx build-deps @org/github-integration"
+              },
+              "configurations": {},
+              "parallelism": true
+            },
+            "lint": {
+              "executor": "@nx/eslint:lint",
+              "options": {},
+              "configurations": {},
+              "parallelism": true
+            },
+            "test": {
+              "executor": "@nx/vitest:vitest",
+              "outputs": [
+                "{options.reportsDirectory}"
+              ],
+              "options": {
+                "config": "libs/shared/github-integration/vitest.config.ts"
+              },
+              "configurations": {},
+              "parallelism": true,
+              "dependsOn": [
+                "^build"
+              ]
+            }
+          },
+          "name": "@org/github-integration",
+          "tags": [
+            "npm:private",
+            "scope:shared",
+            "type:data-access"
+          ],
+          "metadata": {
+            "targetGroups": {},
+            "js": {
+              "packageName": "@org/github-integration",
+              "packageVersion": "0.0.1",
+              "packageExports": {
+                "./package.json": "./package.json",
+                ".": {
+                  "@org/source": "./src/index.ts",
+                  "types": "./dist/index.d.ts",
+                  "import": "./dist/index.js",
+                  "default": "./dist/index.js"
+                }
+              },
+              "packageMain": "./dist/index.js",
+              "isInPackageManagerWorkspaces": false
+            }
+          },
+          "$schema": "../../../node_modules/nx/schemas/project-schema.json",
+          "sourceRoot": "libs/shared/github-integration/src",
+          "projectType": "library",
+          "implicitDependencies": []
+        }
+      },
+      "@org/browser-ci-platform-e2e": {
+        "name": "@org/browser-ci-platform-e2e",
+        "type": "app",
+        "data": {
+          "root": "apps/browser-ci-platform-e2e",
+          "targets": {
+            "typecheck": {
+              "dependsOn": [
+                "^typecheck"
+              ],
+              "options": {
+                "cwd": "apps/browser-ci-platform-e2e",
+                "command": "tsc --build --emitDeclarationOnly"
+              },
+              "cache": true,
+              "inputs": [
+                "{projectRoot}/package.json",
+                "{workspaceRoot}/tsconfig.base.json",
+                "{projectRoot}/tsconfig.json",
+                "{projectRoot}/**/*.ts",
+                "{projectRoot}/**/*.js",
+                "{projectRoot}/playwright.config.ts",
+                "{projectRoot}/src/**/*.spec.ts",
+                "{projectRoot}/src/**/*.spec.js",
+                "{projectRoot}/src/**/*.test.ts",
+                "{projectRoot}/src/**/*.test.js",
+                "{projectRoot}/src/**/*.d.ts",
+                "!{projectRoot}/out-tsc",
+                "!{projectRoot}/test-output",
+                "!{projectRoot}/eslint.config.js",
+                "!{projectRoot}/eslint.config.mjs",
+                "!{projectRoot}/eslint.config.cjs",
+                "^production"
+              ],
+              "outputs": [
+                "{projectRoot}/out-tsc/playwright/**/*.d.ts",
+                "{projectRoot}/out-tsc/playwright/**/*.d.ts.map",
+                "{projectRoot}/out-tsc/playwright/tsconfig.tsbuildinfo"
+              ],
+              "syncGenerators": [
+                "@nx/js:typescript-sync"
+              ],
+              "metadata": {
+                "technologies": [
+                  "typescript"
+                ],
+                "description": "Runs type-checking for the project.",
+                "help": {
+                  "command": "npx tsc --build --help",
+                  "example": {
+                    "args": [
+                      "--force"
+                    ]
+                  }
+                }
+              },
+              "executor": "nx:run-commands",
+              "configurations": {},
+              "parallelism": true
+            },
+            "lint": {
+              "cache": true,
+              "options": {
+                "cwd": "apps/browser-ci-platform-e2e",
+                "command": "eslint ."
+              },
+              "inputs": [
+                "default",
+                "^default",
+                "{workspaceRoot}/eslint.config.mjs",
+                "{workspaceRoot}/apps/browser-ci-platform-e2e/eslint.config.mjs",
+                "{workspaceRoot}/tools/eslint-rules/**/*",
+                {
+                  "externalDependencies": [
+                    "eslint"
+                  ]
+                }
+              ],
+              "outputs": [
+                "{options.outputFile}"
+              ],
+              "metadata": {
+                "technologies": [
+                  "eslint"
+                ],
+                "description": "Runs ESLint on project",
+                "help": {
+                  "command": "npx eslint --help",
+                  "example": {
+                    "options": {
+                      "max-warnings": 0
+                    }
+                  }
+                }
+              },
+              "executor": "nx:run-commands",
+              "configurations": {},
+              "parallelism": true
+            },
+            "e2e": {
+              "options": {
+                "cwd": "apps/browser-ci-platform-e2e",
+                "command": "playwright test"
+              },
+              "metadata": {
+                "technologies": [
+                  "playwright"
+                ],
+                "description": "Runs Playwright Tests",
+                "help": {
+                  "command": "npx playwright test --help",
+                  "example": {
+                    "options": {
+                      "workers": 1
+                    }
+                  }
+                }
+              },
+              "dependsOn": [
+                {
+                  "projects": [
+                    "@org/browser-ci-platform"
+                  ],
+                  "target": "preview"
+                }
+              ],
+              "cache": true,
+              "inputs": [
+                "default",
+                "^production",
+                {
+                  "externalDependencies": [
+                    "@playwright/test"
+                  ]
+                }
+              ],
+              "outputs": [
+                "{workspaceRoot}/dist/.playwright/apps/browser-ci-platform-e2e/test-output",
+                "{workspaceRoot}/dist/.playwright/apps/browser-ci-platform-e2e/playwright-report"
+              ],
+              "executor": "nx:run-commands",
+              "configurations": {},
+              "parallelism": true
+            },
+            "e2e-ci--src/example.spec.ts": {
+              "options": {
+                "cwd": "apps/browser-ci-platform-e2e",
+                "env": {
+                  "PLAYWRIGHT_HTML_OUTPUT_DIR": "../../dist/.playwright/apps/browser-ci-platform-e2e/playwright-report/src-example-spec-ts",
+                  "PLAYWRIGHT_HTML_REPORT": "../../dist/.playwright/apps/browser-ci-platform-e2e/playwright-report/src-example-spec-ts"
+                },
+                "command": "playwright test src/example.spec.ts --output=../../dist/.playwright/apps/browser-ci-platform-e2e/test-output/src-example-spec-ts"
+              },
+              "metadata": {
+                "technologies": [
+                  "playwright"
+                ],
+                "description": "Runs Playwright Tests in src/example.spec.ts in CI",
+                "help": {
+                  "command": "npx playwright test --help",
+                  "example": {
+                    "options": {
+                      "workers": 1
+                    }
+                  }
+                }
+              },
+              "dependsOn": [
+                {
+                  "projects": [
+                    "@org/browser-ci-platform"
+                  ],
+                  "target": "preview"
+                }
+              ],
+              "cache": true,
+              "inputs": [
+                "default",
+                "^production",
+                {
+                  "externalDependencies": [
+                    "@playwright/test"
+                  ]
+                }
+              ],
+              "outputs": [
+                "{workspaceRoot}/dist/.playwright/apps/browser-ci-platform-e2e/test-output/src-example-spec-ts",
+                "{workspaceRoot}/dist/.playwright/apps/browser-ci-platform-e2e/playwright-report/src-example-spec-ts"
+              ],
+              "executor": "nx:run-commands",
+              "configurations": {},
+              "parallelism": true
+            },
+            "e2e-ci": {
+              "executor": "nx:noop",
+              "cache": true,
+              "inputs": [
+                "default",
+                "^production",
+                {
+                  "externalDependencies": [
+                    "@playwright/test"
+                  ]
+                }
+              ],
+              "outputs": [
+                "{workspaceRoot}/dist/.playwright/apps/browser-ci-platform-e2e/test-output",
+                "{workspaceRoot}/dist/.playwright/apps/browser-ci-platform-e2e/playwright-report"
+              ],
+              "dependsOn": [
+                {
+                  "target": "e2e-ci--src/example.spec.ts",
+                  "projects": "self",
+                  "params": "forward",
+                  "options": "forward"
+                }
+              ],
+              "metadata": {
+                "technologies": [
+                  "playwright"
+                ],
+                "description": "Runs Playwright Tests in CI",
+                "nonAtomizedTarget": "e2e",
+                "help": {
+                  "command": "npx playwright test --help",
+                  "example": {
+                    "options": {
+                      "workers": 1
+                    }
+                  }
+                }
+              },
+              "configurations": {},
+              "options": {},
+              "parallelism": true
+            },
+            "e2e-ci--merge-reports": {
+              "executor": "@nx/playwright:merge-reports",
+              "cache": true,
+              "inputs": [
+                "default",
+                "^production",
+                {
+                  "externalDependencies": [
+                    "@playwright/test"
+                  ]
+                }
+              ],
+              "outputs": [
+                "{workspaceRoot}/dist/.playwright/apps/browser-ci-platform-e2e/playwright-report"
+              ],
+              "options": {
+                "config": "playwright.config.ts",
+                "expectedSuites": 1
+              },
+              "metadata": {
+                "technologies": [
+                  "playwright"
+                ],
+                "description": "Merges Playwright blob reports from atomized tasks to produce unified reports for the configured reporters."
+              },
+              "configurations": {},
+              "parallelism": true
+            }
+          },
+          "metadata": {
+            "targetGroups": {
+              "E2E (CI)": [
+                "e2e-ci--src/example.spec.ts",
+                "e2e-ci",
+                "e2e-ci--merge-reports"
+              ]
+            }
+          },
+          "name": "@org/browser-ci-platform-e2e",
+          "implicitDependencies": [],
+          "tags": []
+        }
+      },
+      "@org/shop-feature-products": {
+        "name": "@org/shop-feature-products",
+        "type": "lib",
+        "data": {
+          "root": "libs/shop/feature-products",
+          "targets": {
+            "typecheck": {
+              "cache": true,
+              "inputs": [
+                "production",
+                "^production",
+                {
+                  "externalDependencies": [
+                    "typescript"
+                  ]
+                }
+              ],
+              "options": {
+                "cwd": "libs/shop/feature-products",
+                "command": "tsc --noEmit -p tsconfig.lib.json"
+              },
+              "metadata": {
+                "technologies": [
+                  "typescript",
+                  "typescript"
+                ],
+                "description": "Runs type-checking for the project.",
+                "help": {
+                  "command": "npx tsc -p tsconfig.lib.json --help",
+                  "example": {
+                    "options": {
+                      "noEmit": true
+                    }
+                  }
+                }
+              },
+              "executor": "nx:run-commands",
+              "configurations": {},
+              "parallelism": true
+            },
+            "lint": {
+              "cache": true,
+              "options": {
+                "cwd": "libs/shop/feature-products",
+                "command": "eslint ."
+              },
+              "inputs": [
+                "default",
+                "^default",
+                "{workspaceRoot}/eslint.config.mjs",
+                "{workspaceRoot}/libs/shop/feature-products/eslint.config.mjs",
+                "{workspaceRoot}/tools/eslint-rules/**/*",
+                {
+                  "externalDependencies": [
+                    "eslint"
+                  ]
+                }
+              ],
+              "outputs": [
+                "{options.outputFile}"
+              ],
+              "metadata": {
+                "technologies": [
+                  "eslint"
+                ],
+                "description": "Runs ESLint on project",
+                "help": {
+                  "command": "npx eslint --help",
+                  "example": {
+                    "options": {
+                      "max-warnings": 0
+                    }
+                  }
+                }
+              },
+              "executor": "nx:run-commands",
+              "configurations": {},
+              "parallelism": true
+            },
+            "test": {
+              "cache": true,
+              "inputs": [
+                "default",
+                "^production",
+                {
+                  "externalDependencies": [
+                    "vitest"
+                  ]
+                },
+                {
+                  "env": "CI"
+                }
+              ],
+              "outputs": [
+                "{projectRoot}/test-output/vitest/coverage"
+              ],
+              "metadata": {
+                "technologies": [
+                  "vite",
+                  "vitest"
+                ],
+                "description": "Run Vitest tests",
+                "help": {
+                  "command": "npx vitest --help",
+                  "example": {
+                    "options": {
+                      "bail": 1,
+                      "coverage": true
+                    }
+                  }
+                }
+              },
+              "executor": "nx:run-commands",
+              "options": {
+                "cwd": "libs/shop/feature-products",
+                "command": "vitest"
+              },
+              "configurations": {},
+              "parallelism": true,
+              "dependsOn": [
+                "^build"
+              ]
+            },
+            "build-deps": {
+              "dependsOn": [
+                "^build"
+              ],
+              "configurations": {},
+              "options": {},
+              "parallelism": true,
+              "executor": "nx:noop"
+            },
+            "watch-deps": {
+              "continuous": true,
+              "dependsOn": [
+                "build-deps"
+              ],
+              "executor": "nx:run-commands",
+              "options": {
+                "command": "npx nx watch --projects @org/shop-feature-products --includeDependentProjects -- npx nx build-deps @org/shop-feature-products"
+              },
+              "configurations": {},
+              "parallelism": true
+            }
+          },
+          "metadata": {},
+          "projectType": "library",
+          "name": "@org/shop-feature-products",
+          "implicitDependencies": [],
+          "tags": []
+        }
+      },
+      "@org/browser-ci-platform": {
+        "name": "@org/browser-ci-platform",
+        "type": "lib",
+        "data": {
+          "root": "apps/browser-ci-platform",
+          "targets": {
+            "typecheck": {
+              "cache": true,
+              "inputs": [
+                "production",
+                "^production",
+                {
+                  "externalDependencies": [
+                    "typescript"
+                  ]
+                }
+              ],
+              "options": {
+                "cwd": "apps/browser-ci-platform",
+                "command": "tsc --noEmit -p tsconfig.app.json"
+              },
+              "metadata": {
+                "technologies": [
+                  "typescript",
+                  "typescript"
+                ],
+                "description": "Runs type-checking for the project.",
+                "help": {
+                  "command": "npx tsc -p tsconfig.app.json --help",
+                  "example": {
+                    "options": {
+                      "noEmit": true
+                    }
+                  }
+                }
+              },
+              "executor": "nx:run-commands",
+              "configurations": {},
+              "parallelism": true
+            },
+            "lint": {
+              "cache": true,
+              "options": {
+                "cwd": "apps/browser-ci-platform",
+                "command": "eslint ."
+              },
+              "inputs": [
+                "default",
+                "^default",
+                "{workspaceRoot}/eslint.config.mjs",
+                "{workspaceRoot}/apps/browser-ci-platform/eslint.config.mjs",
+                "{workspaceRoot}/tools/eslint-rules/**/*",
+                {
+                  "externalDependencies": [
+                    "eslint"
+                  ]
+                }
+              ],
+              "outputs": [
+                "{options.outputFile}"
+              ],
+              "metadata": {
+                "technologies": [
+                  "eslint"
+                ],
+                "description": "Runs ESLint on project",
+                "help": {
+                  "command": "npx eslint --help",
+                  "example": {
+                    "options": {
+                      "max-warnings": 0
+                    }
+                  }
+                }
+              },
+              "executor": "nx:run-commands",
+              "configurations": {},
+              "parallelism": true
+            },
+            "build": {
+              "options": {
+                "cwd": "apps/browser-ci-platform",
+                "command": "vite build"
+              },
+              "cache": true,
+              "dependsOn": [
+                "^build"
+              ],
+              "inputs": [
+                "production",
+                "^production",
+                {
+                  "externalDependencies": [
+                    "vite"
+                  ]
+                }
+              ],
+              "outputs": [
+                "{projectRoot}/dist"
+              ],
+              "metadata": {
+                "technologies": [
+                  "vite"
+                ],
+                "description": "Run Vite build",
+                "help": {
+                  "command": "npx vite build --help",
+                  "example": {
+                    "options": {
+                      "sourcemap": true,
+                      "manifest": "manifest.json"
+                    }
+                  }
+                }
+              },
+              "executor": "nx:run-commands",
+              "configurations": {},
+              "parallelism": true
+            },
+            "serve": {
+              "continuous": true,
+              "options": {
+                "cwd": "apps/browser-ci-platform",
+                "command": "vite"
+              },
+              "metadata": {
+                "technologies": [
+                  "vite"
+                ],
+                "description": "Starts Vite dev server",
+                "help": {
+                  "command": "npx vite --help",
+                  "example": {
+                    "options": {
+                      "port": 3000
+                    }
+                  }
+                },
+                "deprecated": "Use devTargetName instead. This option will be removed in Nx 22."
+              },
+              "executor": "nx:run-commands",
+              "configurations": {},
+              "parallelism": true
+            },
+            "dev": {
+              "continuous": true,
+              "options": {
+                "cwd": "apps/browser-ci-platform",
+                "command": "vite"
+              },
+              "metadata": {
+                "technologies": [
+                  "vite"
+                ],
+                "description": "Starts Vite dev server",
+                "help": {
+                  "command": "npx vite --help",
+                  "example": {
+                    "options": {
+                      "port": 3000
+                    }
+                  }
+                }
+              },
+              "executor": "nx:run-commands",
+              "configurations": {},
+              "parallelism": true
+            },
+            "preview": {
+              "continuous": true,
+              "dependsOn": [
+                "build"
+              ],
+              "options": {
+                "cwd": "apps/browser-ci-platform",
+                "command": "vite preview"
+              },
+              "metadata": {
+                "technologies": [
+                  "vite"
+                ],
+                "description": "Locally preview Vite production build",
+                "help": {
+                  "command": "npx vite preview --help",
+                  "example": {
+                    "options": {
+                      "port": 3000
+                    }
+                  }
+                }
+              },
+              "executor": "nx:run-commands",
+              "configurations": {},
+              "parallelism": true
+            },
+            "serve-static": {
+              "continuous": true,
+              "executor": "@nx/web:file-server",
+              "options": {
+                "buildTarget": "build",
+                "spa": true
+              },
+              "configurations": {},
+              "parallelism": true
+            },
+            "build-deps": {
+              "dependsOn": [
+                "^build"
+              ],
+              "configurations": {},
+              "options": {},
+              "parallelism": true,
+              "executor": "nx:noop"
+            },
+            "watch-deps": {
+              "continuous": true,
+              "dependsOn": [
+                "build-deps"
+              ],
+              "executor": "nx:run-commands",
+              "options": {
+                "command": "npx nx watch --projects @org/browser-ci-platform --includeDependentProjects -- npx nx build-deps @org/browser-ci-platform"
+              },
+              "configurations": {},
+              "parallelism": true
+            }
+          },
+          "projectType": "library",
+          "metadata": {},
+          "name": "@org/browser-ci-platform",
+          "implicitDependencies": [],
+          "tags": []
+        }
+      },
+      "@org/ci-pipeline": {
+        "name": "@org/ci-pipeline",
+        "type": "lib",
+        "data": {
+          "root": "libs/shared/ci-pipeline",
+          "targets": {
+            "typecheck": {
+              "dependsOn": [
+                "build",
+                "^typecheck"
+              ],
+              "options": {
+                "cwd": "libs/shared/ci-pipeline",
+                "command": "tsc --build --emitDeclarationOnly"
+              },
+              "cache": true,
+              "inputs": [
+                "{projectRoot}/package.json",
+                "{workspaceRoot}/tsconfig.base.json",
+                "{projectRoot}/tsconfig.json",
+                "{projectRoot}/tsconfig.lib.json",
+                "{projectRoot}/src/**/*.ts",
+                {
+                  "dependentTasksOutputFiles": "**/*.d.ts"
+                }
+              ],
+              "outputs": [
+                "{projectRoot}/dist/**/*.d.ts",
+                "{projectRoot}/dist/**/*.d.ts.map",
+                "{projectRoot}/dist/tsconfig.lib.tsbuildinfo"
+              ],
+              "syncGenerators": [
+                "@nx/js:typescript-sync"
+              ],
+              "metadata": {
+                "technologies": [
+                  "typescript"
+                ],
+                "description": "Runs type-checking for the project.",
+                "help": {
+                  "command": "npx tsc --build --help",
+                  "example": {
+                    "args": [
+                      "--force"
+                    ]
+                  }
+                }
+              },
+              "executor": "nx:run-commands",
+              "configurations": {},
+              "parallelism": true
+            },
+            "build": {
+              "executor": "@nx/rollup:rollup",
+              "outputs": [
+                "{options.outputPath}"
+              ],
+              "options": {
+                "main": "libs/shared/ci-pipeline/src/index.ts",
+                "tsConfig": "libs/shared/ci-pipeline/tsconfig.lib.json",
+                "outputPath": "libs/shared/ci-pipeline/dist",
+                "format": [
+                  "esm"
+                ],
+                "assets": [
+                  {
+                    "glob": "libs/shared/ci-pipeline/README.md",
+                    "input": ".",
+                    "output": "."
+                  }
+                ]
+              },
+              "configurations": {},
+              "parallelism": true
+            },
+            "build-deps": {
+              "dependsOn": [
+                "^build"
+              ],
+              "configurations": {},
+              "options": {},
+              "parallelism": true,
+              "executor": "nx:noop"
+            },
+            "watch-deps": {
+              "continuous": true,
+              "dependsOn": [
+                "build-deps"
+              ],
+              "executor": "nx:run-commands",
+              "options": {
+                "command": "npx nx watch --projects @org/ci-pipeline --includeDependentProjects -- npx nx build-deps @org/ci-pipeline"
+              },
+              "configurations": {},
+              "parallelism": true
+            },
+            "lint": {
+              "executor": "@nx/eslint:lint",
+              "options": {},
+              "configurations": {},
+              "parallelism": true
+            },
+            "test": {
+              "executor": "@nx/vitest:vitest",
+              "outputs": [
+                "{options.reportsDirectory}"
+              ],
+              "options": {
+                "config": "libs/shared/ci-pipeline/vitest.config.ts"
+              },
+              "configurations": {},
+              "parallelism": true,
+              "dependsOn": [
+                "^build"
+              ]
+            }
+          },
+          "name": "@org/ci-pipeline",
+          "tags": [
+            "npm:private",
+            "scope:shared",
+            "type:data-access"
+          ],
+          "metadata": {
+            "targetGroups": {},
+            "js": {
+              "packageName": "@org/ci-pipeline",
+              "packageVersion": "0.0.1",
+              "packageExports": {
+                "./package.json": "./package.json",
+                ".": {
+                  "@org/source": "./src/index.ts",
+                  "types": "./dist/index.d.ts",
+                  "import": "./dist/index.js",
+                  "default": "./dist/index.js"
+                }
+              },
+              "packageMain": "./dist/index.js",
+              "isInPackageManagerWorkspaces": false
+            }
+          },
+          "$schema": "../../../node_modules/nx/schemas/project-schema.json",
+          "sourceRoot": "libs/shared/ci-pipeline/src",
+          "projectType": "library",
+          "implicitDependencies": []
+        }
+      },
+      "@org/shared-test-utils": {
+        "name": "@org/shared-test-utils",
+        "type": "lib",
+        "data": {
+          "root": "libs/shared/test-utils",
+          "targets": {
+            "typecheck": {
+              "dependsOn": [
+                "^typecheck"
+              ],
+              "options": {
+                "cwd": "libs/shared/test-utils",
+                "command": "tsc --build --emitDeclarationOnly"
+              },
+              "cache": true,
+              "inputs": [
+                "{projectRoot}/package.json",
+                "{workspaceRoot}/tsconfig.base.json",
+                "{projectRoot}/tsconfig.json",
+                "{projectRoot}/tsconfig.lib.json",
+                "{projectRoot}/src/**/*.js",
+                "{projectRoot}/src/**/*.jsx",
+                "{projectRoot}/src/**/*.ts",
+                "{projectRoot}/src/**/*.tsx",
+                "!{projectRoot}/out-tsc",
+                "!{projectRoot}/dist",
+                "!{projectRoot}/**/*.spec.ts",
+                "!{projectRoot}/**/*.test.ts",
+                "!{projectRoot}/**/*.spec.tsx",
+                "!{projectRoot}/**/*.test.tsx",
+                "!{projectRoot}/**/*.spec.js",
+                "!{projectRoot}/**/*.test.js",
+                "!{projectRoot}/**/*.spec.jsx",
+                "!{projectRoot}/**/*.test.jsx",
+                {
+                  "dependentTasksOutputFiles": "**/*.d.ts"
+                }
+              ],
+              "outputs": [
+                "{projectRoot}/dist/**/*.d.ts",
+                "{projectRoot}/dist/**/*.d.ts.map",
+                "{projectRoot}/dist/tsconfig.lib.tsbuildinfo"
+              ],
+              "syncGenerators": [
+                "@nx/js:typescript-sync"
+              ],
+              "metadata": {
+                "technologies": [
+                  "typescript"
+                ],
+                "description": "Runs type-checking for the project.",
+                "help": {
+                  "command": "npx tsc --build --help",
+                  "example": {
+                    "args": [
+                      "--force"
+                    ]
+                  }
+                }
+              },
+              "executor": "nx:run-commands",
+              "configurations": {},
+              "parallelism": true
+            },
+            "lint": {
+              "cache": true,
+              "options": {
+                "cwd": "libs/shared/test-utils",
+                "command": "eslint ."
+              },
+              "inputs": [
+                "default",
+                "^default",
+                "{workspaceRoot}/eslint.config.mjs",
+                "{workspaceRoot}/tools/eslint-rules/**/*",
+                {
+                  "externalDependencies": [
+                    "eslint"
+                  ]
+                }
+              ],
+              "outputs": [
+                "{options.outputFile}"
+              ],
+              "metadata": {
+                "technologies": [
+                  "eslint"
+                ],
+                "description": "Runs ESLint on project",
+                "help": {
+                  "command": "npx eslint --help",
+                  "example": {
+                    "options": {
+                      "max-warnings": 0
+                    }
+                  }
+                }
+              },
+              "executor": "nx:run-commands",
+              "configurations": {},
+              "parallelism": true
+            }
+          },
+          "name": "@org/shared-test-utils",
+          "implicitDependencies": [],
+          "tags": []
+        }
+      },
+      "@org/shop-shared-ui": {
+        "name": "@org/shop-shared-ui",
+        "type": "lib",
+        "data": {
+          "root": "libs/shop/shared-ui",
+          "targets": {
+            "typecheck": {
+              "cache": true,
+              "inputs": [
+                "production",
+                "^production",
+                {
+                  "externalDependencies": [
+                    "typescript"
+                  ]
+                }
+              ],
+              "options": {
+                "cwd": "libs/shop/shared-ui",
+                "command": "tsc --noEmit -p tsconfig.lib.json"
+              },
+              "metadata": {
+                "technologies": [
+                  "typescript",
+                  "typescript"
+                ],
+                "description": "Runs type-checking for the project.",
+                "help": {
+                  "command": "npx tsc -p tsconfig.lib.json --help",
+                  "example": {
+                    "options": {
+                      "noEmit": true
+                    }
+                  }
+                }
+              },
+              "executor": "nx:run-commands",
+              "configurations": {},
+              "parallelism": true
+            },
+            "lint": {
+              "cache": true,
+              "options": {
+                "cwd": "libs/shop/shared-ui",
+                "command": "eslint ."
+              },
+              "inputs": [
+                "default",
+                "^default",
+                "{workspaceRoot}/eslint.config.mjs",
+                "{workspaceRoot}/libs/shop/shared-ui/eslint.config.mjs",
+                "{workspaceRoot}/tools/eslint-rules/**/*",
+                {
+                  "externalDependencies": [
+                    "eslint"
+                  ]
+                }
+              ],
+              "outputs": [
+                "{options.outputFile}"
+              ],
+              "metadata": {
+                "technologies": [
+                  "eslint"
+                ],
+                "description": "Runs ESLint on project",
+                "help": {
+                  "command": "npx eslint --help",
+                  "example": {
+                    "options": {
+                      "max-warnings": 0
+                    }
+                  }
+                }
+              },
+              "executor": "nx:run-commands",
+              "configurations": {},
+              "parallelism": true
+            },
+            "test": {
+              "cache": true,
+              "inputs": [
+                "default",
+                "^production",
+                {
+                  "externalDependencies": [
+                    "vitest"
+                  ]
+                },
+                {
+                  "env": "CI"
+                }
+              ],
+              "outputs": [
+                "{projectRoot}/test-output/vitest/coverage"
+              ],
+              "metadata": {
+                "technologies": [
+                  "vite",
+                  "vitest"
+                ],
+                "description": "Run Vitest tests",
+                "help": {
+                  "command": "npx vitest --help",
+                  "example": {
+                    "options": {
+                      "bail": 1,
+                      "coverage": true
+                    }
+                  }
+                }
+              },
+              "executor": "nx:run-commands",
+              "options": {
+                "cwd": "libs/shop/shared-ui",
+                "command": "vitest"
+              },
+              "configurations": {},
+              "parallelism": true,
+              "dependsOn": [
+                "^build"
+              ]
+            },
+            "build-deps": {
+              "dependsOn": [
+                "^build"
+              ],
+              "configurations": {},
+              "options": {},
+              "parallelism": true,
+              "executor": "nx:noop"
+            },
+            "watch-deps": {
+              "continuous": true,
+              "dependsOn": [
+                "build-deps"
+              ],
+              "executor": "nx:run-commands",
+              "options": {
+                "command": "npx nx watch --projects @org/shop-shared-ui --includeDependentProjects -- npx nx build-deps @org/shop-shared-ui"
+              },
+              "configurations": {},
+              "parallelism": true
+            }
+          },
+          "metadata": {},
+          "projectType": "library",
+          "name": "@org/shop-shared-ui",
+          "implicitDependencies": [],
+          "tags": []
+        }
+      },
+      "@org/models": {
+        "name": "@org/models",
+        "type": "lib",
+        "data": {
+          "root": "libs/shared/models",
+          "targets": {
+            "lint": {
+              "cache": true,
+              "options": {
+                "cwd": "libs/shared/models",
+                "command": "eslint ."
+              },
+              "inputs": [
+                "default",
+                "^default",
+                "{workspaceRoot}/eslint.config.mjs",
+                "{workspaceRoot}/libs/shared/models/eslint.config.mjs",
+                "{workspaceRoot}/tools/eslint-rules/**/*",
+                {
+                  "externalDependencies": [
+                    "eslint"
+                  ]
+                }
+              ],
+              "outputs": [
+                "{options.outputFile}"
+              ],
+              "metadata": {
+                "technologies": [
+                  "eslint"
+                ],
+                "description": "Runs ESLint on project",
+                "help": {
+                  "command": "npx eslint --help",
+                  "example": {
+                    "options": {
+                      "max-warnings": 0
+                    }
+                  }
+                }
+              },
+              "executor": "nx:run-commands",
+              "configurations": {},
+              "parallelism": true
+            },
+            "typecheck": {
+              "dependsOn": [
+                "^typecheck"
+              ],
+              "options": {
+                "cwd": "libs/shared/models",
+                "command": "tsc --build --emitDeclarationOnly"
+              },
+              "cache": true,
+              "inputs": [
+                "{projectRoot}/package.json",
+                "{workspaceRoot}/tsconfig.base.json",
+                "{projectRoot}/tsconfig.json",
+                "{projectRoot}/tsconfig.lib.json",
+                "{projectRoot}/tsconfig.spec.json",
+                "{projectRoot}/src/**/*.ts",
+                "{projectRoot}/vite.config.ts",
+                "{projectRoot}/vite.config.mts",
+                "{projectRoot}/vitest.config.ts",
+                "{projectRoot}/vitest.config.mts",
+                "{projectRoot}/src/**/*.test.ts",
+                "{projectRoot}/src/**/*.spec.ts",
+                "{projectRoot}/src/**/*.test.tsx",
+                "{projectRoot}/src/**/*.spec.tsx",
+                "{projectRoot}/src/**/*.test.js",
+                "{projectRoot}/src/**/*.spec.js",
+                "{projectRoot}/src/**/*.test.jsx",
+                "{projectRoot}/src/**/*.spec.jsx",
+                "{projectRoot}/src/**/*.d.ts",
+                "^production"
+              ],
+              "outputs": [
+                "{projectRoot}/dist/**/*.d.ts",
+                "{projectRoot}/dist/**/*.d.ts.map",
+                "{projectRoot}/dist/tsconfig.lib.tsbuildinfo",
+                "{projectRoot}/out-tsc/vitest/**/*.d.ts",
+                "{projectRoot}/out-tsc/vitest/**/*.d.ts.map",
+                "{projectRoot}/out-tsc/vitest/tsconfig.tsbuildinfo"
+              ],
+              "syncGenerators": [
+                "@nx/js:typescript-sync"
+              ],
+              "metadata": {
+                "technologies": [
+                  "typescript"
+                ],
+                "description": "Runs type-checking for the project.",
+                "help": {
+                  "command": "npx tsc --build --help",
+                  "example": {
+                    "args": [
+                      "--force"
+                    ]
+                  }
+                }
+              },
+              "executor": "nx:run-commands",
+              "configurations": {},
+              "parallelism": true
+            }
+          },
+          "name": "@org/models",
+          "implicitDependencies": [],
+          "tags": []
+        }
+      },
+      "@org/api-products": {
+        "name": "@org/api-products",
+        "type": "lib",
+        "data": {
+          "root": "libs/api/products",
+          "targets": {
+            "typecheck": {
+              "cache": true,
+              "inputs": [
+                "production",
+                "^production",
+                {
+                  "externalDependencies": [
+                    "typescript"
+                  ]
+                }
+              ],
+              "options": {
+                "cwd": "libs/api/products",
+                "command": "tsc --noEmit -p tsconfig.lib.json"
+              },
+              "metadata": {
+                "technologies": [
+                  "typescript",
+                  "typescript"
+                ],
+                "description": "Runs type-checking for the project.",
+                "help": {
+                  "command": "npx tsc -p tsconfig.lib.json --help",
+                  "example": {
+                    "options": {
+                      "noEmit": true
+                    }
+                  }
+                }
+              },
+              "executor": "nx:run-commands",
+              "configurations": {},
+              "parallelism": true
+            },
+            "build": {
+              "dependsOn": [
+                "^build"
+              ],
+              "options": {
+                "cwd": "libs/api/products",
+                "command": "tsc --build tsconfig.lib.json"
+              },
+              "cache": true,
+              "inputs": [
+                "{projectRoot}/package.json",
+                "{workspaceRoot}/tsconfig.base.json",
+                "{projectRoot}/tsconfig.lib.json",
+                "{projectRoot}/src/**/*.ts",
+                "!{projectRoot}/jest.config.ts",
+                "!{projectRoot}/src/**/*.spec.ts",
+                "!{projectRoot}/src/**/*.test.ts",
+                {
+                  "dependentTasksOutputFiles": "**/*.d.ts"
+                }
+              ],
+              "outputs": [
+                "{projectRoot}/dist"
+              ],
+              "syncGenerators": [
+                "@nx/js:typescript-sync"
+              ],
+              "metadata": {
+                "technologies": [
+                  "typescript"
+                ],
+                "description": "Builds the project with `tsc`.",
+                "help": {
+                  "command": "npx tsc --build --help",
+                  "example": {
+                    "args": [
+                      "--force"
+                    ]
+                  }
+                }
+              },
+              "executor": "nx:run-commands",
+              "configurations": {},
+              "parallelism": true
+            },
+            "build-deps": {
+              "dependsOn": [
+                "^build"
+              ],
+              "configurations": {},
+              "options": {},
+              "parallelism": true,
+              "executor": "nx:noop"
+            },
+            "watch-deps": {
+              "continuous": true,
+              "dependsOn": [
+                "build-deps"
+              ],
+              "executor": "nx:run-commands",
+              "options": {
+                "command": "npx nx watch --projects @org/api-products --includeDependentProjects -- npx nx build-deps @org/api-products"
+              },
+              "configurations": {},
+              "parallelism": true
+            },
+            "lint": {
+              "cache": true,
+              "options": {
+                "cwd": "libs/api/products",
+                "command": "eslint ."
+              },
+              "inputs": [
+                "default",
+                "^default",
+                "{workspaceRoot}/eslint.config.mjs",
+                "{workspaceRoot}/libs/api/products/eslint.config.mjs",
+                "{workspaceRoot}/tools/eslint-rules/**/*",
+                {
+                  "externalDependencies": [
+                    "eslint"
+                  ]
+                }
+              ],
+              "outputs": [
+                "{options.outputFile}"
+              ],
+              "metadata": {
+                "technologies": [
+                  "eslint"
+                ],
+                "description": "Runs ESLint on project",
+                "help": {
+                  "command": "npx eslint --help",
+                  "example": {
+                    "options": {
+                      "max-warnings": 0
+                    }
+                  }
+                }
+              },
+              "executor": "nx:run-commands",
+              "configurations": {},
+              "parallelism": true
+            },
+            "test": {
+              "cache": true,
+              "inputs": [
+                "default",
+                "^production",
+                {
+                  "externalDependencies": [
+                    "vitest"
+                  ]
+                },
+                {
+                  "env": "CI"
+                }
+              ],
+              "outputs": [
+                "{projectRoot}/test-output/vitest/coverage"
+              ],
+              "metadata": {
+                "technologies": [
+                  "vite",
+                  "vitest"
+                ],
+                "description": "Run Vitest tests",
+                "help": {
+                  "command": "npx vitest --help",
+                  "example": {
+                    "options": {
+                      "bail": 1,
+                      "coverage": true
+                    }
+                  }
+                }
+              },
+              "executor": "nx:run-commands",
+              "options": {
+                "cwd": "libs/api/products",
+                "command": "vitest"
+              },
+              "configurations": {},
+              "parallelism": true,
+              "dependsOn": [
+                "^build"
+              ]
+            }
+          },
+          "metadata": {},
+          "projectType": "library",
+          "name": "@org/api-products",
+          "implicitDependencies": [],
+          "tags": []
+        }
+      },
+      "@org/shop-data": {
+        "name": "@org/shop-data",
+        "type": "lib",
+        "data": {
+          "root": "libs/shop/data",
+          "targets": {
+            "typecheck": {
+              "cache": true,
+              "inputs": [
+                "production",
+                "^production",
+                {
+                  "externalDependencies": [
+                    "typescript"
+                  ]
+                }
+              ],
+              "options": {
+                "cwd": "libs/shop/data",
+                "command": "tsc --noEmit -p tsconfig.lib.json"
+              },
+              "metadata": {
+                "technologies": [
+                  "typescript",
+                  "typescript"
+                ],
+                "description": "Runs type-checking for the project.",
+                "help": {
+                  "command": "npx tsc -p tsconfig.lib.json --help",
+                  "example": {
+                    "options": {
+                      "noEmit": true
+                    }
+                  }
+                }
+              },
+              "executor": "nx:run-commands",
+              "configurations": {},
+              "parallelism": true
+            },
+            "lint": {
+              "cache": true,
+              "options": {
+                "cwd": "libs/shop/data",
+                "command": "eslint ."
+              },
+              "inputs": [
+                "default",
+                "^default",
+                "{workspaceRoot}/eslint.config.mjs",
+                "{workspaceRoot}/libs/shop/data/eslint.config.mjs",
+                "{workspaceRoot}/tools/eslint-rules/**/*",
+                {
+                  "externalDependencies": [
+                    "eslint"
+                  ]
+                }
+              ],
+              "outputs": [
+                "{options.outputFile}"
+              ],
+              "metadata": {
+                "technologies": [
+                  "eslint"
+                ],
+                "description": "Runs ESLint on project",
+                "help": {
+                  "command": "npx eslint --help",
+                  "example": {
+                    "options": {
+                      "max-warnings": 0
+                    }
+                  }
+                }
+              },
+              "executor": "nx:run-commands",
+              "configurations": {},
+              "parallelism": true
+            },
+            "test": {
+              "cache": true,
+              "inputs": [
+                "default",
+                "^production",
+                {
+                  "externalDependencies": [
+                    "vitest"
+                  ]
+                },
+                {
+                  "env": "CI"
+                }
+              ],
+              "outputs": [
+                "{projectRoot}/test-output/vitest/coverage"
+              ],
+              "metadata": {
+                "technologies": [
+                  "vite",
+                  "vitest"
+                ],
+                "description": "Run Vitest tests",
+                "help": {
+                  "command": "npx vitest --help",
+                  "example": {
+                    "options": {
+                      "bail": 1,
+                      "coverage": true
+                    }
+                  }
+                }
+              },
+              "executor": "nx:run-commands",
+              "options": {
+                "cwd": "libs/shop/data",
+                "command": "vitest"
+              },
+              "configurations": {},
+              "parallelism": true,
+              "dependsOn": [
+                "^build"
+              ]
+            },
+            "build-deps": {
+              "dependsOn": [
+                "^build"
+              ],
+              "configurations": {},
+              "options": {},
+              "parallelism": true,
+              "executor": "nx:noop"
+            },
+            "watch-deps": {
+              "continuous": true,
+              "dependsOn": [
+                "build-deps"
+              ],
+              "executor": "nx:run-commands",
+              "options": {
+                "command": "npx nx watch --projects @org/shop-data --includeDependentProjects -- npx nx build-deps @org/shop-data"
+              },
+              "configurations": {},
+              "parallelism": true
+            }
+          },
+          "metadata": {},
+          "projectType": "library",
+          "name": "@org/shop-data",
+          "implicitDependencies": [],
+          "tags": []
+        }
+      },
+      "@org/shop-e2e": {
+        "name": "@org/shop-e2e",
+        "type": "app",
+        "data": {
+          "root": "apps/shop-e2e",
+          "targets": {
+            "typecheck": {
+              "dependsOn": [
+                "^typecheck"
+              ],
+              "options": {
+                "cwd": "apps/shop-e2e",
+                "command": "tsc --build --emitDeclarationOnly"
+              },
+              "cache": true,
+              "inputs": [
+                "{projectRoot}/package.json",
+                "{workspaceRoot}/tsconfig.base.json",
+                "{projectRoot}/tsconfig.json",
+                "{projectRoot}/**/*.ts",
+                "{projectRoot}/**/*.js",
+                "{projectRoot}/playwright.config.ts",
+                "{projectRoot}/src/**/*.spec.ts",
+                "{projectRoot}/src/**/*.spec.js",
+                "{projectRoot}/src/**/*.test.ts",
+                "{projectRoot}/src/**/*.test.js",
+                "{projectRoot}/src/**/*.d.ts",
+                "!{projectRoot}/out-tsc",
+                "!{projectRoot}/test-output",
+                "!{projectRoot}/eslint.config.js",
+                "!{projectRoot}/eslint.config.mjs",
+                "!{projectRoot}/eslint.config.cjs",
+                "^production"
+              ],
+              "outputs": [
+                "{projectRoot}/out-tsc/playwright/**/*.d.ts",
+                "{projectRoot}/out-tsc/playwright/**/*.d.ts.map",
+                "{projectRoot}/out-tsc/playwright/tsconfig.tsbuildinfo"
+              ],
+              "syncGenerators": [
+                "@nx/js:typescript-sync"
+              ],
+              "metadata": {
+                "technologies": [
+                  "typescript"
+                ],
+                "description": "Runs type-checking for the project.",
+                "help": {
+                  "command": "npx tsc --build --help",
+                  "example": {
+                    "args": [
+                      "--force"
+                    ]
+                  }
+                }
+              },
+              "executor": "nx:run-commands",
+              "configurations": {},
+              "parallelism": true
+            },
+            "lint": {
+              "cache": true,
+              "options": {
+                "cwd": "apps/shop-e2e",
+                "command": "eslint ."
+              },
+              "inputs": [
+                "default",
+                "^default",
+                "{workspaceRoot}/eslint.config.mjs",
+                "{workspaceRoot}/apps/shop-e2e/eslint.config.mjs",
+                "{workspaceRoot}/tools/eslint-rules/**/*",
+                {
+                  "externalDependencies": [
+                    "eslint"
+                  ]
+                }
+              ],
+              "outputs": [
+                "{options.outputFile}"
+              ],
+              "metadata": {
+                "technologies": [
+                  "eslint"
+                ],
+                "description": "Runs ESLint on project",
+                "help": {
+                  "command": "npx eslint --help",
+                  "example": {
+                    "options": {
+                      "max-warnings": 0
+                    }
+                  }
+                }
+              },
+              "executor": "nx:run-commands",
+              "configurations": {},
+              "parallelism": true
+            },
+            "e2e": {
+              "options": {
+                "cwd": "apps/shop-e2e",
+                "command": "playwright test"
+              },
+              "metadata": {
+                "technologies": [
+                  "playwright"
+                ],
+                "description": "Runs Playwright Tests",
+                "help": {
+                  "command": "npx playwright test --help",
+                  "example": {
+                    "options": {
+                      "workers": 1
+                    }
+                  }
+                }
+              },
+              "dependsOn": [
+                {
+                  "projects": [
+                    "@org/shop"
+                  ],
+                  "target": "preview"
+                }
+              ],
+              "cache": true,
+              "inputs": [
+                "default",
+                "^production",
+                {
+                  "externalDependencies": [
+                    "@playwright/test"
+                  ]
+                }
+              ],
+              "outputs": [
+                "{workspaceRoot}/dist/.playwright/apps/shop-e2e/test-output",
+                "{workspaceRoot}/dist/.playwright/apps/shop-e2e/playwright-report"
+              ],
+              "executor": "nx:run-commands",
+              "configurations": {},
+              "parallelism": true
+            },
+            "e2e-ci--src/navigation-flow.spec.ts": {
+              "options": {
+                "cwd": "apps/shop-e2e",
+                "env": {
+                  "PLAYWRIGHT_HTML_OUTPUT_DIR": "../../dist/.playwright/apps/shop-e2e/playwright-report/src-navigation-flow-spec-ts",
+                  "PLAYWRIGHT_HTML_REPORT": "../../dist/.playwright/apps/shop-e2e/playwright-report/src-navigation-flow-spec-ts"
+                },
+                "command": "playwright test src/navigation-flow.spec.ts --output=../../dist/.playwright/apps/shop-e2e/test-output/src-navigation-flow-spec-ts"
+              },
+              "metadata": {
+                "technologies": [
+                  "playwright"
+                ],
+                "description": "Runs Playwright Tests in src/navigation-flow.spec.ts in CI",
+                "help": {
+                  "command": "npx playwright test --help",
+                  "example": {
+                    "options": {
+                      "workers": 1
+                    }
+                  }
+                }
+              },
+              "dependsOn": [
+                {
+                  "projects": [
+                    "@org/shop"
+                  ],
+                  "target": "preview"
+                }
+              ],
+              "cache": true,
+              "inputs": [
+                "default",
+                "^production",
+                {
+                  "externalDependencies": [
+                    "@playwright/test"
+                  ]
+                }
+              ],
+              "outputs": [
+                "{workspaceRoot}/dist/.playwright/apps/shop-e2e/test-output/src-navigation-flow-spec-ts",
+                "{workspaceRoot}/dist/.playwright/apps/shop-e2e/playwright-report/src-navigation-flow-spec-ts"
+              ],
+              "executor": "nx:run-commands",
+              "configurations": {},
+              "parallelism": true
+            },
+            "e2e-ci--src/product-detail.spec.ts": {
+              "options": {
+                "cwd": "apps/shop-e2e",
+                "env": {
+                  "PLAYWRIGHT_HTML_OUTPUT_DIR": "../../dist/.playwright/apps/shop-e2e/playwright-report/src-product-detail-spec-ts",
+                  "PLAYWRIGHT_HTML_REPORT": "../../dist/.playwright/apps/shop-e2e/playwright-report/src-product-detail-spec-ts"
+                },
+                "command": "playwright test src/product-detail.spec.ts --output=../../dist/.playwright/apps/shop-e2e/test-output/src-product-detail-spec-ts"
+              },
+              "metadata": {
+                "technologies": [
+                  "playwright"
+                ],
+                "description": "Runs Playwright Tests in src/product-detail.spec.ts in CI",
+                "help": {
+                  "command": "npx playwright test --help",
+                  "example": {
+                    "options": {
+                      "workers": 1
+                    }
+                  }
+                }
+              },
+              "dependsOn": [
+                {
+                  "projects": [
+                    "@org/shop"
+                  ],
+                  "target": "preview"
+                }
+              ],
+              "cache": true,
+              "inputs": [
+                "default",
+                "^production",
+                {
+                  "externalDependencies": [
+                    "@playwright/test"
+                  ]
+                }
+              ],
+              "outputs": [
+                "{workspaceRoot}/dist/.playwright/apps/shop-e2e/test-output/src-product-detail-spec-ts",
+                "{workspaceRoot}/dist/.playwright/apps/shop-e2e/playwright-report/src-product-detail-spec-ts"
+              ],
+              "executor": "nx:run-commands",
+              "configurations": {},
+              "parallelism": true
+            },
+            "e2e-ci--src/product-listing.spec.ts": {
+              "options": {
+                "cwd": "apps/shop-e2e",
+                "env": {
+                  "PLAYWRIGHT_HTML_OUTPUT_DIR": "../../dist/.playwright/apps/shop-e2e/playwright-report/src-product-listing-spec-ts",
+                  "PLAYWRIGHT_HTML_REPORT": "../../dist/.playwright/apps/shop-e2e/playwright-report/src-product-listing-spec-ts"
+                },
+                "command": "playwright test src/product-listing.spec.ts --output=../../dist/.playwright/apps/shop-e2e/test-output/src-product-listing-spec-ts"
+              },
+              "metadata": {
+                "technologies": [
+                  "playwright"
+                ],
+                "description": "Runs Playwright Tests in src/product-listing.spec.ts in CI",
+                "help": {
+                  "command": "npx playwright test --help",
+                  "example": {
+                    "options": {
+                      "workers": 1
+                    }
+                  }
+                }
+              },
+              "dependsOn": [
+                {
+                  "projects": [
+                    "@org/shop"
+                  ],
+                  "target": "preview"
+                }
+              ],
+              "cache": true,
+              "inputs": [
+                "default",
+                "^production",
+                {
+                  "externalDependencies": [
+                    "@playwright/test"
+                  ]
+                }
+              ],
+              "outputs": [
+                "{workspaceRoot}/dist/.playwright/apps/shop-e2e/test-output/src-product-listing-spec-ts",
+                "{workspaceRoot}/dist/.playwright/apps/shop-e2e/playwright-report/src-product-listing-spec-ts"
+              ],
+              "executor": "nx:run-commands",
+              "configurations": {},
+              "parallelism": true
+            },
+            "e2e-ci--src/shop-homepage.spec.ts": {
+              "options": {
+                "cwd": "apps/shop-e2e",
+                "env": {
+                  "PLAYWRIGHT_HTML_OUTPUT_DIR": "../../dist/.playwright/apps/shop-e2e/playwright-report/src-shop-homepage-spec-ts",
+                  "PLAYWRIGHT_HTML_REPORT": "../../dist/.playwright/apps/shop-e2e/playwright-report/src-shop-homepage-spec-ts"
+                },
+                "command": "playwright test src/shop-homepage.spec.ts --output=../../dist/.playwright/apps/shop-e2e/test-output/src-shop-homepage-spec-ts"
+              },
+              "metadata": {
+                "technologies": [
+                  "playwright"
+                ],
+                "description": "Runs Playwright Tests in src/shop-homepage.spec.ts in CI",
+                "help": {
+                  "command": "npx playwright test --help",
+                  "example": {
+                    "options": {
+                      "workers": 1
+                    }
+                  }
+                }
+              },
+              "dependsOn": [
+                {
+                  "projects": [
+                    "@org/shop"
+                  ],
+                  "target": "preview"
+                }
+              ],
+              "cache": true,
+              "inputs": [
+                "default",
+                "^production",
+                {
+                  "externalDependencies": [
+                    "@playwright/test"
+                  ]
+                }
+              ],
+              "outputs": [
+                "{workspaceRoot}/dist/.playwright/apps/shop-e2e/test-output/src-shop-homepage-spec-ts",
+                "{workspaceRoot}/dist/.playwright/apps/shop-e2e/playwright-report/src-shop-homepage-spec-ts"
+              ],
+              "executor": "nx:run-commands",
+              "configurations": {},
+              "parallelism": true
+            },
+            "e2e-ci": {
+              "executor": "nx:noop",
+              "cache": true,
+              "inputs": [
+                "default",
+                "^production",
+                {
+                  "externalDependencies": [
+                    "@playwright/test"
+                  ]
+                }
+              ],
+              "outputs": [
+                "{workspaceRoot}/dist/.playwright/apps/shop-e2e/test-output",
+                "{workspaceRoot}/dist/.playwright/apps/shop-e2e/playwright-report"
+              ],
+              "dependsOn": [
+                {
+                  "target": "e2e-ci--src/navigation-flow.spec.ts",
+                  "projects": "self",
+                  "params": "forward",
+                  "options": "forward"
+                },
+                {
+                  "target": "e2e-ci--src/product-detail.spec.ts",
+                  "projects": "self",
+                  "params": "forward",
+                  "options": "forward"
+                },
+                {
+                  "target": "e2e-ci--src/product-listing.spec.ts",
+                  "projects": "self",
+                  "params": "forward",
+                  "options": "forward"
+                },
+                {
+                  "target": "e2e-ci--src/shop-homepage.spec.ts",
+                  "projects": "self",
+                  "params": "forward",
+                  "options": "forward"
+                }
+              ],
+              "metadata": {
+                "technologies": [
+                  "playwright"
+                ],
+                "description": "Runs Playwright Tests in CI",
+                "nonAtomizedTarget": "e2e",
+                "help": {
+                  "command": "npx playwright test --help",
+                  "example": {
+                    "options": {
+                      "workers": 1
+                    }
+                  }
+                }
+              },
+              "configurations": {},
+              "options": {},
+              "parallelism": true
+            },
+            "e2e-ci--merge-reports": {
+              "executor": "@nx/playwright:merge-reports",
+              "cache": true,
+              "inputs": [
+                "default",
+                "^production",
+                {
+                  "externalDependencies": [
+                    "@playwright/test"
+                  ]
+                }
+              ],
+              "outputs": [
+                "{workspaceRoot}/dist/.playwright/apps/shop-e2e/playwright-report"
+              ],
+              "options": {
+                "config": "playwright.config.ts",
+                "expectedSuites": 4
+              },
+              "metadata": {
+                "technologies": [
+                  "playwright"
+                ],
+                "description": "Merges Playwright blob reports from atomized tasks to produce unified reports for the configured reporters."
+              },
+              "configurations": {},
+              "parallelism": true
+            }
+          },
+          "metadata": {
+            "targetGroups": {
+              "E2E (CI)": [
+                "e2e-ci--src/navigation-flow.spec.ts",
+                "e2e-ci--src/product-detail.spec.ts",
+                "e2e-ci--src/product-listing.spec.ts",
+                "e2e-ci--src/shop-homepage.spec.ts",
+                "e2e-ci",
+                "e2e-ci--merge-reports"
+              ]
+            }
+          },
+          "name": "@org/shop-e2e",
+          "implicitDependencies": [],
+          "tags": []
+        }
+      },
+      "@org/shop": {
+        "name": "@org/shop",
+        "type": "lib",
+        "data": {
+          "root": "apps/shop",
+          "targets": {
+            "typecheck": {
+              "cache": true,
+              "inputs": [
+                "production",
+                "^production",
+                {
+                  "externalDependencies": [
+                    "typescript"
+                  ]
+                }
+              ],
+              "options": {
+                "cwd": "apps/shop",
+                "command": "tsc --noEmit -p tsconfig.app.json"
+              },
+              "metadata": {
+                "technologies": [
+                  "typescript",
+                  "typescript"
+                ],
+                "description": "Runs type-checking for the project.",
+                "help": {
+                  "command": "npx tsc -p tsconfig.app.json --help",
+                  "example": {
+                    "options": {
+                      "noEmit": true
+                    }
+                  }
+                }
+              },
+              "executor": "nx:run-commands",
+              "configurations": {},
+              "parallelism": true
+            },
+            "lint": {
+              "cache": true,
+              "options": {
+                "cwd": "apps/shop",
+                "command": "eslint ."
+              },
+              "inputs": [
+                "default",
+                "^default",
+                "{workspaceRoot}/eslint.config.mjs",
+                "{workspaceRoot}/apps/shop/eslint.config.mjs",
+                "{workspaceRoot}/tools/eslint-rules/**/*",
+                {
+                  "externalDependencies": [
+                    "eslint"
+                  ]
+                }
+              ],
+              "outputs": [
+                "{options.outputFile}"
+              ],
+              "metadata": {
+                "technologies": [
+                  "eslint"
+                ],
+                "description": "Runs ESLint on project",
+                "help": {
+                  "command": "npx eslint --help",
+                  "example": {
+                    "options": {
+                      "max-warnings": 0
+                    }
+                  }
+                }
+              },
+              "executor": "nx:run-commands",
+              "configurations": {},
+              "parallelism": true
+            },
+            "test": {
+              "cache": true,
+              "inputs": [
+                "default",
+                "^production",
+                {
+                  "externalDependencies": [
+                    "vitest"
+                  ]
+                },
+                {
+                  "env": "CI"
+                }
+              ],
+              "outputs": [
+                "{projectRoot}/test-output/vitest/coverage"
+              ],
+              "metadata": {
+                "technologies": [
+                  "vite",
+                  "vitest"
+                ],
+                "description": "Run Vitest tests",
+                "help": {
+                  "command": "npx vitest --help",
+                  "example": {
+                    "options": {
+                      "bail": 1,
+                      "coverage": true
+                    }
+                  }
+                }
+              },
+              "executor": "nx:run-commands",
+              "options": {
+                "cwd": "apps/shop",
+                "command": "vitest"
+              },
+              "configurations": {},
+              "parallelism": true,
+              "dependsOn": [
+                "^build"
+              ]
+            },
+            "build": {
+              "options": {
+                "cwd": "apps/shop",
+                "command": "vite build"
+              },
+              "cache": true,
+              "dependsOn": [
+                "^build"
+              ],
+              "inputs": [
+                "production",
+                "^production",
+                {
+                  "externalDependencies": [
+                    "vite"
+                  ]
+                }
+              ],
+              "outputs": [
+                "{projectRoot}/dist"
+              ],
+              "metadata": {
+                "technologies": [
+                  "vite"
+                ],
+                "description": "Run Vite build",
+                "help": {
+                  "command": "npx vite build --help",
+                  "example": {
+                    "options": {
+                      "sourcemap": true,
+                      "manifest": "manifest.json"
+                    }
+                  }
+                }
+              },
+              "executor": "nx:run-commands",
+              "configurations": {},
+              "parallelism": true
+            },
+            "serve": {
+              "continuous": true,
+              "options": {
+                "cwd": "apps/shop",
+                "command": "vite"
+              },
+              "metadata": {
+                "technologies": [
+                  "vite"
+                ],
+                "description": "Starts Vite dev server",
+                "help": {
+                  "command": "npx vite --help",
+                  "example": {
+                    "options": {
+                      "port": 3000
+                    }
+                  }
+                },
+                "deprecated": "Use devTargetName instead. This option will be removed in Nx 22."
+              },
+              "executor": "nx:run-commands",
+              "configurations": {},
+              "parallelism": true
+            },
+            "dev": {
+              "continuous": true,
+              "options": {
+                "cwd": "apps/shop",
+                "command": "vite"
+              },
+              "metadata": {
+                "technologies": [
+                  "vite"
+                ],
+                "description": "Starts Vite dev server",
+                "help": {
+                  "command": "npx vite --help",
+                  "example": {
+                    "options": {
+                      "port": 3000
+                    }
+                  }
+                }
+              },
+              "executor": "nx:run-commands",
+              "configurations": {},
+              "parallelism": true
+            },
+            "preview": {
+              "continuous": true,
+              "dependsOn": [
+                "build"
+              ],
+              "options": {
+                "cwd": "apps/shop",
+                "command": "vite preview"
+              },
+              "metadata": {
+                "technologies": [
+                  "vite"
+                ],
+                "description": "Locally preview Vite production build",
+                "help": {
+                  "command": "npx vite preview --help",
+                  "example": {
+                    "options": {
+                      "port": 3000
+                    }
+                  }
+                }
+              },
+              "executor": "nx:run-commands",
+              "configurations": {},
+              "parallelism": true
+            },
+            "serve-static": {
+              "continuous": true,
+              "executor": "@nx/web:file-server",
+              "options": {
+                "buildTarget": "build",
+                "spa": true
+              },
+              "configurations": {},
+              "parallelism": true
+            },
+            "build-deps": {
+              "dependsOn": [
+                "^build"
+              ],
+              "configurations": {},
+              "options": {},
+              "parallelism": true,
+              "executor": "nx:noop"
+            },
+            "watch-deps": {
+              "continuous": true,
+              "dependsOn": [
+                "build-deps"
+              ],
+              "executor": "nx:run-commands",
+              "options": {
+                "command": "npx nx watch --projects @org/shop --includeDependentProjects -- npx nx build-deps @org/shop"
+              },
+              "configurations": {},
+              "parallelism": true
+            }
+          },
+          "projectType": "library",
+          "metadata": {},
+          "name": "@org/shop",
+          "implicitDependencies": [],
+          "tags": []
+        }
+      },
+      "@org/api": {
+        "name": "@org/api",
+        "type": "lib",
+        "data": {
+          "root": "apps/api",
+          "targets": {
+            "typecheck": {
+              "cache": true,
+              "inputs": [
+                "production",
+                "^production",
+                {
+                  "externalDependencies": [
+                    "typescript"
+                  ]
+                }
+              ],
+              "options": {
+                "cwd": "apps/api",
+                "command": "tsc --noEmit -p tsconfig.app.json"
+              },
+              "metadata": {
+                "technologies": [
+                  "typescript",
+                  "typescript"
+                ],
+                "description": "Runs type-checking for the project.",
+                "help": {
+                  "command": "npx tsc -p tsconfig.app.json --help",
+                  "example": {
+                    "options": {
+                      "noEmit": true
+                    }
+                  }
+                }
+              },
+              "executor": "nx:run-commands",
+              "configurations": {},
+              "parallelism": true
+            },
+            "lint": {
+              "cache": true,
+              "options": {
+                "cwd": "apps/api",
+                "command": "eslint ."
+              },
+              "inputs": [
+                "default",
+                "^default",
+                "{workspaceRoot}/eslint.config.mjs",
+                "{workspaceRoot}/apps/api/eslint.config.mjs",
+                "{workspaceRoot}/tools/eslint-rules/**/*",
+                {
+                  "externalDependencies": [
+                    "eslint"
+                  ]
+                }
+              ],
+              "outputs": [
+                "{options.outputFile}"
+              ],
+              "metadata": {
+                "technologies": [
+                  "eslint"
+                ],
+                "description": "Runs ESLint on project",
+                "help": {
+                  "command": "npx eslint --help",
+                  "example": {
+                    "options": {
+                      "max-warnings": 0
+                    }
+                  }
+                }
+              },
+              "executor": "nx:run-commands",
+              "configurations": {},
+              "parallelism": true
+            },
+            "test": {
+              "cache": true,
+              "inputs": [
+                "default",
+                "^production",
+                {
+                  "externalDependencies": [
+                    "vitest"
+                  ]
+                },
+                {
+                  "env": "CI"
+                }
+              ],
+              "outputs": [
+                "{projectRoot}/test-output/vitest/coverage"
+              ],
+              "metadata": {
+                "technologies": [
+                  "vite",
+                  "vitest"
+                ],
+                "description": "Run Vitest tests",
+                "help": {
+                  "command": "npx vitest --help",
+                  "example": {
+                    "options": {
+                      "bail": 1,
+                      "coverage": true
+                    }
+                  }
+                }
+              },
+              "executor": "nx:run-commands",
+              "options": {
+                "cwd": "apps/api",
+                "command": "vitest"
+              },
+              "configurations": {},
+              "parallelism": true,
+              "dependsOn": [
+                "^build"
+              ]
+            },
+            "build-deps": {
+              "dependsOn": [
+                "^build"
+              ],
+              "configurations": {},
+              "options": {},
+              "parallelism": true,
+              "executor": "nx:noop"
+            },
+            "watch-deps": {
+              "continuous": true,
+              "dependsOn": [
+                "build-deps"
+              ],
+              "executor": "nx:run-commands",
+              "options": {
+                "command": "npx nx watch --projects @org/api --includeDependentProjects -- npx nx build-deps @org/api"
+              },
+              "configurations": {},
+              "parallelism": true
+            }
+          },
+          "metadata": {},
+          "projectType": "library",
+          "name": "@org/api",
+          "implicitDependencies": [],
+          "tags": []
+        }
+      }
+    },
+    "dependencies": {
+      "@org/shop-feature-product-detail": [],
+      "@org/webcontainer-manager": [],
+      "@org/github-integration": [],
+      "@org/browser-ci-platform-e2e": [],
+      "@org/shop-feature-products": [
+        {
+          "source": "@org/shop-feature-products",
+          "target": "@org/models",
+          "type": "static"
+        }
+      ],
+      "@org/browser-ci-platform": [
+        {
+          "source": "@org/browser-ci-platform",
+          "target": "@org/github-integration",
+          "type": "static"
+        },
+        {
+          "source": "@org/browser-ci-platform",
+          "target": "@org/webcontainer-manager",
+          "type": "static"
+        },
+        {
+          "source": "@org/browser-ci-platform",
+          "target": "@org/ci-pipeline",
+          "type": "static"
+        }
+      ],
+      "@org/ci-pipeline": [
+        {
+          "source": "@org/ci-pipeline",
+          "target": "@org/webcontainer-manager",
+          "type": "static"
+        }
+      ],
+      "@org/shared-test-utils": [
+        {
+          "source": "@org/shared-test-utils",
+          "target": "@org/models",
+          "type": "static"
+        }
+      ],
+      "@org/shop-shared-ui": [
+        {
+          "source": "@org/shop-shared-ui",
+          "target": "@org/models",
+          "type": "static"
+        }
+      ],
+      "@org/models": [],
+      "@org/api-products": [
+        {
+          "source": "@org/api-products",
+          "target": "@org/models",
+          "type": "static"
+        }
+      ],
+      "@org/shop-data": [
+        {
+          "source": "@org/shop-data",
+          "target": "@org/models",
+          "type": "static"
+        }
+      ],
+      "@org/shop-e2e": [],
+      "@org/shop": [],
+      "@org/api": [
+        {
+          "source": "@org/api",
+          "target": "@org/models",
+          "type": "static"
+        }
+      ]
+    }
+  }
+}

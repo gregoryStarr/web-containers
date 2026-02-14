@@ -1,0 +1,36 @@
+{
+  "name": "@org/github-integration",
+  "$schema": "../../../node_modules/nx/schemas/project-schema.json",
+  "sourceRoot": "libs/shared/github-integration/src",
+  "projectType": "library",
+  "tags": ["scope:shared", "type:data-access"],
+  "targets": {
+    "build": {
+      "executor": "@nx/rollup:rollup",
+      "outputs": ["{options.outputPath}"],
+      "options": {
+        "main": "libs/shared/github-integration/src/index.ts",
+        "tsConfig": "libs/shared/github-integration/tsconfig.lib.json",
+        "outputPath": "libs/shared/github-integration/dist",
+        "format": ["esm"],
+        "assets": [
+          {
+            "glob": "libs/shared/github-integration/README.md",
+            "input": ".",
+            "output": "."
+          }
+        ]
+      }
+    },
+    "lint": {
+      "executor": "@nx/eslint:lint"
+    },
+    "test": {
+      "executor": "@nx/vitest:vitest",
+      "outputs": ["{options.reportsDirectory}"],
+      "options": {
+        "config": "libs/shared/github-integration/vitest.config.ts"
+      }
+    }
+  }
+}
