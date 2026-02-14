@@ -18,11 +18,12 @@ export function App() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [token, setToken] = useState(import.meta.env.VITE_GITHUB_TOKEN || '');
-  const [owner, setOwner] = useState('');
-  const [repo, setRepo] = useState('');
-  const [githubService, setGithubService] =
-    useState<GitHubIntegrationService | null>(null);
+  const [owner, setOwner] = useState('gregoryStarr');
+  const [repo, setRepo] = useState('Web-Containers');
+  const [githubService, setGithubService] = useState<GitHubIntegrationService | null>(null);
   const [runningPRs, setRunningPRs] = useState<Set<number>>(new Set());
+  const [ciLogs, setCiLogs] = useState<string[]>([]);
+  const [currentStage, setCurrentStage] = useState<string>('');
 
   useEffect(() => {
     if (token && owner && repo) {
@@ -53,35 +54,53 @@ export function App() {
     }
   };
 
+  const addLog = (message: string) => {
+    setCiLogs(prev => [...prev, `[${new Date().toLocaleTimeString()}] ${message}`]);
+
+    // Extract current stage from log messages
+    if (message.includes('Starting install stage')) {
+      setCurrentStage('Installing dependencies...');
+    } else if (message.includes('Starting build stage')) {
+      setCurrentStage('Building project...');
+    } else if (message.includes('Starting test stage')) {
+      setCurrentStage('Running tests...');
+    } else if (message.includes('Starting mutation stage')) {
+      setCurrentStage('Running mutation tests...');
+    } else if (message.includes('completed') && message.includes('succeeded')) {
+      setCurrentStage('');
+    } else if (message.includes('failed')) {
+      setCurrentStage('Failed');
+    }
+  };
+
   const runCI = async (pr: PR) => {
     if (!githubService) return;
 
-    setRunningPRs((prev) => new Set(prev).add(pr.id));
-
+      setRunningPRs(prev => new Set(prev).add(pr.id));
+      setCurrentStage('Initializing...');
     try {
       // Update PR status
-      setPrs((prev) =>
-        prev.map((p) =>
-          p.id === pr.id
-            ? {
-                ...p,
-                status: 'running' as const,
-                logs: ['Initializing CI pipeline...'],
-              }
-            : p
-        )
-      );
+      setPrs(prev => prev.map(p =>
+        p.id === pr.id ? { ...p, status: 'running' as const, logs: [] } : p
+      ));
 
       // Create WebContainer and mount files
-      const manager = new WebContainerManager();
+      addLog('🚀 Starting CI for repo: ' + owner + '/' + repo);
+      const manager = new WebContainerManager(addLog);
+      addLog('📦 Booting WebContainer...');
       await manager.bootContainer();
+      addLog('✅ WebContainer booted');
 
       // Fetch and mount repository files (full codebase for CI)
+      addLog('📥 Fetching repository files...');
       const containerFiles = await githubService.createContainerFilesFromRepo();
+      addLog('📁 Fetched ' + Object.keys(containerFiles).length + ' files for mounting');
+      addLog('🔧 Mounting files in WebContainer...');
       await manager.container?.mount(containerFiles);
+      addLog('✅ Files mounted successfully');
 
       // Run pipeline
-      const pipeline = new CIPipelineOrchestrator(manager, {});
+      const pipeline = new CIPipelineOrchestrator(manager, {}, addLog);
       const results = await pipeline.runPipeline();
 
       // Collect logs
@@ -136,11 +155,12 @@ export function App() {
         )
       );
     } finally {
-      setRunningPRs((prev) => {
+      setRunningPRs(prev => {
         const newSet = new Set(prev);
         newSet.delete(pr.id);
         return newSet;
       });
+      setCurrentStage('');
     }
   };
 
@@ -210,6 +230,8 @@ export function App() {
                 pr={selectedPR}
                 onRunCI={runCI}
                 isRunning={runningPRs.has(selectedPR.id)}
+                logs={ciLogs}
+                currentStage={currentStage}
               />
             ) : (
               <div className="bg-white rounded-lg shadow p-6">
