@@ -90,7 +90,6 @@ export class CIPipelineOrchestrator {
           name: 'install',
           command: 'yarn',
           args: ['install'],
-          timeout: 300000,
         };
       }
 
