@@ -91,63 +91,6 @@ export class CIPipelineOrchestrator {
     }
   }
 
-  async executeInstallWithProgress(stage: PipelineStage, onProgress?: (count: number) => void): Promise<CommandResult> {
-    if (!this.manager || !this.manager.isContainerBooted) {
-      throw new Error('Container is not booted');
-    }
-
-    const fullCommand = [stage.command, ...(stage.args || [])].join(' ');
-    this.logger?.(`⚡ Executing: ${fullCommand}${stage.cwd ? ` (in ${stage.cwd})` : ''}`);
-
-    const startTime = Date.now();
-
-    try {
-      const process = await (this.manager as any).container.spawn(stage.command, stage.args || [], {
-        cwd: stage.cwd,
-      });
-
-      let loadedDeps = 0;
-      const output: string[] = [];
-
-      // Read output stream
-      process.output.pipeTo(new WritableStream({
-        write(data) {
-          output.push(data);
-          // Try to parse JSON events
-          try {
-            const json = JSON.parse(data);
-            if (json.type === 'package-installed') {
-              loadedDeps++;
-              onProgress?.(loadedDeps);
-            }
-          } catch (e) {
-            // Ignore non-json lines
-          }
-        },
-      }));
-
-      const exitCode = await process.exit;
-      const duration = Date.now() - startTime;
-
-      return {
-        success: exitCode === 0,
-        stdout: output.join(''),
-        stderr: '', // WebContainer combines output
-        exitCode,
-        duration,
-      };
-    } catch (error) {
-      const duration = Date.now() - startTime;
-      return {
-        success: false,
-        stdout: '',
-        stderr: `Command execution failed: ${error}`,
-        exitCode: -1,
-        duration,
-      };
-    }
-  }
-
   async runPipeline(): Promise<PipelineResult[]> {
     const results: PipelineResult[] = [];
     this.aborted = false;
@@ -199,21 +142,17 @@ export class CIPipelineOrchestrator {
       // Add progress monitoring for long-running commands
       let progressInterval: NodeJS.Timeout | undefined;
       let loadedDeps = 0;
-      let totalDeps = 0;
       if (stage.name === 'install') {
-        // Count total dependencies
-        try {
-          const countResult = await this.manager.captureOutput('node', ['-e', "console.log(Object.keys(require('./package.json').dependencies || {}).length + Object.keys(require('./package.json').devDependencies || {}).length)"], stage.cwd || '.');
-          const cleanResult = countResult.trim().replace(/\x1b\[[0-9;]*m/g, '');
-          totalDeps = parseInt(cleanResult) || 0;
-        } catch (error) {
-          this.logger?.(`Debug: error counting dependencies: ${error}`);
-          // Ignore errors, use 0
-        }
-        this.logger?.(`📦 Installing dependencies... (0 of ${totalDeps})`);
+        this.logger?.(`📦 Installing dependencies... 0 loaded deps`);
         // Start a progress indicator
         progressInterval = setInterval(() => {
-          this.logger?.(`⏳ Installing dependencies (in progress...) (${loadedDeps} of ${totalDeps})`);
+          this.logger?.(`⏳ Installing dependencies (in progress...) ${loadedDeps} loaded deps`);
+        }, 5000); // Log every 5 seconds
+      }
+        this.logger?.(`📦 Installing dependencies... 0 loaded deps`);
+        // Start a progress indicator
+        progressInterval = setInterval(() => {
+          this.logger?.(`⏳ Installing dependencies (in progress...) ${loadedDeps} loaded deps`);
         }, 5000); // Log every 5 seconds
       }
 
