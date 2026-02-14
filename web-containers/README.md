@@ -64,6 +64,42 @@ npx nx run-many -t lint test build e2e --parallel=3
 npx nx graph
 ```
 
+## 🧪 Testing the WebContainer CI Platform
+
+### Local Development Setup
+
+1. **Install dependencies:**
+   ```bash
+   npm install
+   ```
+
+2. **Start the CI Platform:**
+   ```bash
+   npx nx serve @org/browser-ci-platform
+   ```
+
+3. **Open the application:**
+   - Navigate to https://localhost:4200/
+   - Accept the security certificate warning
+
+4. **Configure GitHub Integration:**
+   - Enter your GitHub Personal Access Token
+   - Specify repository owner (e.g., `facebook`)
+   - Specify repository name (e.g., `react`)
+
+5. **Test CI Functionality:**
+   - Click "Fetch PRs" to load pull requests
+   - Select a PR from the list
+   - Click "Run CI" to execute tests in WebContainers
+   - Watch real-time logs and results
+
+### CI Testing Features
+- **Zero Infrastructure**: All testing runs in browser WebContainers
+- **Real GitHub Integration**: Fetches actual PRs and files
+- **Isolated Execution**: Each PR tests in its own container
+- **Live Status Updates**: Real-time progress and results
+- **Secure**: No code leaves your browser
+
 ## ⭐ Featured Nx Capabilities
 
 This repository showcases several powerful Nx features:
