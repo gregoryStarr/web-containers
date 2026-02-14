@@ -22,6 +22,14 @@ export interface CIStatus {
   context: string;
 }
 
+interface GitHubFileItem {
+  name: string;
+  path: string;
+  type: 'file' | 'dir';
+  size: number;
+  download_url: string;
+}
+
 export class GitHubIntegrationService {
   private token: string;
   private owner: string;
@@ -105,33 +113,89 @@ export class GitHubIntegrationService {
     return await response.json() as PRData[];
   }
 
-  // Helper to create WebContainer files from PR
-  async createContainerFilesFromPR(prNumber: number): Promise<Record<string, { file: { contents: string } }>> {
-    const files = await this.fetchPRFiles(prNumber);
+  // Helper to create WebContainer files from repository
+  async createContainerFilesFromRepo(): Promise<Record<string, { file: { contents: string } }>> {
+    const files = await this.fetchEssentialRepoFiles();
     const containerFiles: Record<string, { file: { contents: string } }> = {};
 
-    // For simplicity, only include package.json and source files
-    // In real implementation, fetch actual file contents
     for (const file of files) {
-      if (file.filename === 'package.json' || file.filename.match(/\.(js|ts|jsx|tsx|json)$/)) {
-        // Fetch file content
-        const content = await this.fetchFileContent(file.raw_url);
-        containerFiles[file.filename] = {
-          file: {
-            contents: content,
-          },
-        };
+      if (file.type === 'file' && file.size < 1000000) { // Skip files larger than 1MB
+        try {
+          const response = await fetch(file.download_url, {
+            headers: {
+              'Authorization': `token ${this.token}`,
+              'Accept': 'application/vnd.github.v3.raw',
+            },
+          });
+          if (!response.ok) {
+            throw new Error(`Failed to fetch file: ${response.statusText}`);
+          }
+          const content = await response.text();
+          containerFiles[file.path] = {
+            file: {
+              contents: content,
+            },
+          };
+        } catch (error) {
+          console.warn(`Failed to fetch ${file.path}:`, error);
+        }
       }
     }
 
     return containerFiles;
   }
 
-  private async fetchFileContent(rawUrl: string): Promise<string> {
-    const response = await fetch(rawUrl);
+  // Fetch essential files from repository (non-recursive for simplicity)
+  private async fetchEssentialRepoFiles(): Promise<GitHubFileItem[]> {
+    const url = `${this.baseUrl}/repos/${this.owner}/${this.repo}/contents/`;
+    const response = await fetch(url, {
+      headers: {
+        'Authorization': `token ${this.token}`,
+        'Accept': 'application/vnd.github.v3+json',
+      },
+    });
+
     if (!response.ok) {
-      throw new Error(`Failed to fetch file content: ${response.statusText}`);
+      throw new Error(`Failed to fetch repo contents: ${response.statusText}`);
     }
-    return await response.text();
+
+    const contents = await response.json() as GitHubFileItem[];
+    const essentialFiles: GitHubFileItem[] = [];
+
+    for (const item of contents) {
+      if (item.type === 'file') {
+        // Include essential files
+        if (item.name === 'package.json' ||
+            item.name === 'package-lock.json' ||
+            item.name === 'yarn.lock' ||
+            item.name === 'tsconfig.json' ||
+            item.name === 'vite.config.ts' ||
+            item.name === 'vite.config.js' ||
+            item.name.endsWith('.config.js') ||
+            item.name.endsWith('.config.ts')) {
+          essentialFiles.push(item);
+        }
+      } else if (item.type === 'dir') {
+        // Include key directories
+        if (item.name === 'src' || item.name === 'libs' || item.name === 'apps' ||
+            item.name === 'public' || item.name === 'dist') {
+          // Fetch files from these directories (shallow)
+          const subResponse = await fetch(`${url}${item.name}`, {
+            headers: {
+              'Authorization': `token ${this.token}`,
+              'Accept': 'application/vnd.github.v3+json',
+            },
+          });
+          if (subResponse.ok) {
+            const subContents = await subResponse.json() as GitHubFileItem[];
+            essentialFiles.push(...subContents.filter(subItem =>
+              subItem.type === 'file' && subItem.size < 100000 // < 100KB
+            ));
+          }
+        }
+      }
+    }
+
+    return essentialFiles;
   }
 }

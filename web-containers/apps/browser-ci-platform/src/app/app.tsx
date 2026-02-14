@@ -76,10 +76,8 @@ export function App() {
       const manager = new WebContainerManager();
       await manager.bootContainer();
 
-      // Fetch and mount PR files
-      const containerFiles = await githubService.createContainerFilesFromPR(
-        pr.number
-      );
+      // Fetch and mount repository files (full codebase for CI)
+      const containerFiles = await githubService.createContainerFilesFromRepo();
       await manager.container?.mount(containerFiles);
 
       // Run pipeline
