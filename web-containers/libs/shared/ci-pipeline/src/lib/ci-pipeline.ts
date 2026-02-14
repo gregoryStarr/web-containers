@@ -34,62 +34,7 @@ export class CIPipelineOrchestrator {
     this.logger = logger;
   }
 
-  async executeInstallWithProgress(stage: PipelineStage, onProgress?: (count: number) => void): Promise<CommandResult> {
-    if (!this.manager || !this.manager.isContainerBooted) {
-      throw new Error('Container is not booted');
-    }
 
-    const fullCommand = [stage.command, ...(stage.args || [])].join(' ');
-    this.logger?.(`⚡ Executing: ${fullCommand}${stage.cwd ? ` (in ${stage.cwd})` : ''}`);
-
-    const startTime = Date.now();
-
-    try {
-      const process = await (this.manager as any).container.spawn(stage.command, stage.args || [], {
-        cwd: stage.cwd,
-      });
-
-      let loadedDeps = 0;
-      const output: string[] = [];
-
-      // Read output stream
-      process.output.pipeTo(new WritableStream({
-        write(data) {
-          output.push(data);
-          // Try to parse JSON events
-          try {
-            const json = JSON.parse(data);
-            if (json.type === 'package-installed') {
-              loadedDeps++;
-              onProgress?.(loadedDeps);
-            }
-          } catch (e) {
-            // Ignore non-json lines
-          }
-        },
-      }));
-
-      const exitCode = await process.exit;
-      const duration = Date.now() - startTime;
-
-      return {
-        success: exitCode === 0,
-        stdout: output.join(''),
-        stderr: '', // WebContainer combines output
-        exitCode,
-        duration,
-      };
-    } catch (error) {
-      const duration = Date.now() - startTime;
-      return {
-        success: false,
-        stdout: '',
-        stderr: `Command execution failed: ${error}`,
-        exitCode: -1,
-        duration,
-      };
-    }
-  }
 
   async runPipeline(): Promise<PipelineResult[]> {
     const results: PipelineResult[] = [];
@@ -149,20 +94,9 @@ export class CIPipelineOrchestrator {
           this.logger?.(`⏳ Installing dependencies (in progress...) ${loadedDeps} loaded deps`);
         }, 5000); // Log every 5 seconds
       }
-        this.logger?.(`📦 Installing dependencies... 0 loaded deps`);
-        // Start a progress indicator
-        progressInterval = setInterval(() => {
-          this.logger?.(`⏳ Installing dependencies (in progress...) ${loadedDeps} loaded deps`);
-        }, 5000); // Log every 5 seconds
-      }
 
       try {
-        let result;
-        if (stage.name === 'install') {
-          result = await this.executeInstallWithProgress(stage, (count: number) => { loadedDeps = count; });
-        } else {
-          result = await this.executeStage(stage);
-        }
+        const result = await this.executeStage(stage);
         if (progressInterval) clearInterval(progressInterval);
         this.logger?.(`✅ ${stage.name} completed in ${result.duration}ms (Exit code: ${result.exitCode})`);
 
