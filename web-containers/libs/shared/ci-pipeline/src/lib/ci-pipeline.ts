@@ -91,9 +91,9 @@ export class CIPipelineOrchestrator {
         // Start a progress indicator that counts installed packages
         progressInterval = setInterval(async () => {
           try {
-            // Count installed packages by counting directories in node_modules
-            const countResult = await this.manager.captureOutput('sh', ['-c', 'find node_modules -maxdepth 1 -type d 2>/dev/null | wc -l']);
-            const packageCount = Math.max(0, parseInt(countResult.trim()) - 1); // Subtract 1 for node_modules itself
+            // Count installed packages by counting directories in node_modules using Node.js
+            const countResult = await this.manager.captureOutput('node', ['-e', "try { const fs = require('fs'); const dirs = fs.readdirSync('node_modules').filter(f => fs.statSync('node_modules/' + f).isDirectory()); console.log(dirs.length); } catch(e) { console.log(0); }"]);
+            const packageCount = Math.max(0, parseInt(countResult.trim()) || 0);
             this.logger?.(`⏳ Installing dependencies (in progress...) ${packageCount} loaded deps`);
           } catch (error) {
             // Ignore errors, keep showing 0
