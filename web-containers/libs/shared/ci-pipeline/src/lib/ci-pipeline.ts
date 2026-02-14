@@ -127,13 +127,13 @@ export class CIPipelineOrchestrator {
         timeout: key === 'install' ? 300000 : key === 'build' ? 600000 : key === 'test' ? 900000 : 1200000,
       };
 
-      // Use npm install with verbose output for debugging
+      // Use npm install for install stage
       if (key === 'install' && !stageConfig) {
         stage = {
           name: 'install',
           command: 'npm',
-          args: ['install', '--verbose'],
-          timeout: 300000,
+          args: ['install'],
+          timeout: 600000, // 10 minutes for large installs
         };
       }
 
@@ -149,7 +149,6 @@ export class CIPipelineOrchestrator {
           const countResult = await this.manager.captureOutput('node', ['-e', "console.log(Object.keys(require('./package.json').dependencies || {}).length + Object.keys(require('./package.json').devDependencies || {}).length)"], stage.cwd || '.');
           const cleanResult = countResult.trim().replace(/\x1b\[[0-9;]*m/g, '');
           totalDeps = parseInt(cleanResult) || 0;
-          this.logger?.(`Debug: dependency count result: ${countResult.trim()}, cleaned: ${cleanResult}, parsed: ${totalDeps}`);
         } catch (error) {
           this.logger?.(`Debug: error counting dependencies: ${error}`);
           // Ignore errors, use 0
