@@ -30,7 +30,7 @@ jobs:
           node-version: 20
           cache: 'npm'
 
-      - run: npm ci
+      - run: npm install
       - run: echo "Installed $(npm list --depth=0 --json | jq '.dependencies | length') dependencies"
       - run: npx playwright install --only-shell
 
