@@ -72,12 +72,12 @@ export class CIPipelineOrchestrator {
         timeout: key === 'install' ? 300000 : key === 'build' ? 600000 : key === 'test' ? 900000 : 1200000,
       };
 
-      // Use npm ci for install stage
+      // Use npm install for install stage
       if (key === 'install' && !stageConfig) {
         stage = {
           name: 'install',
           command: 'npm',
-          args: ['ci'],
+          args: ['install'],
           timeout: 300000,
         };
       }
