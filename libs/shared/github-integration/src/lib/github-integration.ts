@@ -22,14 +22,7 @@ export interface CIStatus {
   context: string;
 }
 
-interface GitHubFileItem {
-  name: string;
-  path: string;
-  type: 'file' | 'dir';
-  size: number;
-  url: string;
-  download_url: string | null;
-}
+
 
 export class GitHubIntegrationService {
   private token: string;
@@ -37,10 +30,13 @@ export class GitHubIntegrationService {
   private repo: string;
   private baseUrl = 'https://api.github.com';
 
-  constructor(token: string, owner: string, repo: string) {
+  private logger?: (message: string) => void;
+
+  constructor(token: string, owner: string, repo: string, logger?: (message: string) => void) {
     this.token = token;
     this.owner = owner;
     this.repo = repo;
+    this.logger = logger;
   }
 
   async fetchPR(prNumber: number): Promise<PRData> {
@@ -117,7 +113,7 @@ export class GitHubIntegrationService {
   // Helper to create WebContainer files from repository using recursive tree API
   async createContainerFilesFromRepo(): Promise<Record<string, any>> {
     const { tree, branch } = await this.fetchRepoTree();
-    console.log(`Fetched tree with ${tree.length} items from branch "${branch}"`);
+    this.logger?.(`🌲 Fetched tree with ${tree.length} items from branch "${branch}"`);
 
     // Filter to text-based files only, skip huge files and binary extensions
     const binaryExtensions = new Set(['png', 'jpg', 'jpeg', 'gif', 'ico', 'svg', 'woff', 'woff2', 'ttf', 'eot', 'mp3', 'mp4', 'webp', 'zip', 'tar', 'gz', 'pdf']);
@@ -138,7 +134,7 @@ export class GitHubIntegrationService {
       return true;
     });
 
-    console.log(`Filtered to ${filesToFetch.length} files to fetch`);
+    this.logger?.(`📋 Filtered to ${filesToFetch.length} files to fetch (from ${tree.length} total)`);
 
     // Fetch file contents in parallel batches using raw.githubusercontent.com
     const rawBaseUrl = `https://raw.githubusercontent.com/${this.owner}/${this.repo}/${branch}`;
@@ -171,7 +167,10 @@ export class GitHubIntegrationService {
       }
     }
 
-    console.log(`Successfully fetched ${fileEntries.length} files, ${failCount} failed`);
+    if (failCount > 0) {
+      this.logger?.(`⚠️ Failed to fetch ${failCount} files`);
+    }
+    this.logger?.(`✅ Successfully fetched ${fileEntries.length} files`);
 
     // Build WebContainer file tree structure
     // WebContainer expects: { 'dir': { directory: { 'file.txt': { file: { contents: '...' } } } } }

@@ -47,7 +47,9 @@ export function App() {
 
   useEffect(() => {
     if (token && owner && repo) {
-      setGithubService(new GitHubIntegrationService(token, owner, repo));
+      setGithubService(
+        new GitHubIntegrationService(token, owner, repo, addLog)
+      );
     } else {
       setGithubService(null);
     }
