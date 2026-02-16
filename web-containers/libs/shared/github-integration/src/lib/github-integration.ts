@@ -121,7 +121,7 @@ export class GitHubIntegrationService {
     const containerFiles: Record<string, { file: { contents: string } }> = {};
 
     for (const file of files) {
-      if (file.type === 'file' && file.size < 1000000) { // Skip files larger than 1MB
+      if (file.type === 'file' && (file.size < 10000000 || file.name === 'package-lock.json')) { // Skip files larger than 10MB, ensuring package-lock.json is included
         try {
           const response = await fetch(file.url, {
             headers: {
@@ -174,15 +174,16 @@ export class GitHubIntegrationService {
     for (const item of contents) {
       console.log('Processing item:', item.name, item.type, item.path);
       if (item.type === 'file') {
-        // Include essential files
-        if (item.name === 'package.json' ||
-            item.name === 'package-lock.json' ||
-            item.name === 'yarn.lock' ||
-            item.name === 'tsconfig.json' ||
-            item.name === 'vite.config.ts' ||
-            item.name === 'vite.config.js' ||
-            item.name.endsWith('.config.js') ||
-            item.name.endsWith('.config.ts')) {
+        // Include essential files based on extension or config pattern
+        const ext = item.name.split('.').pop()?.toLowerCase();
+        const essentialExtensions = ['json', 'js', 'jsx', 'ts', 'tsx', 'html', 'css', 'md', 'lock', 'yml', 'yaml'];
+        
+        if (
+          (ext && essentialExtensions.includes(ext)) || 
+          item.name.includes('config') ||
+          item.name === 'Dockerfile' ||
+          item.name === '.gitignore'
+        ) {
           essentialFiles.push(item);
         }
   } else if (item.type === 'dir') {
