@@ -40,6 +40,10 @@ export function App() {
   const [containerInstance, setContainerInstance] = useState<
     InstanceType<typeof WebContainerManager>['container'] | null
   >(null);
+  const [containerStatus, setContainerStatus] = useState<
+    'offline' | 'booting' | 'online' | 'busy'
+  >('offline');
+  const managerRef = useRef<WebContainerManager | null>(null);
 
   useEffect(() => {
     if (token && owner && repo) {
@@ -48,6 +52,32 @@ export function App() {
       setGithubService(null);
     }
   }, [token, owner, repo]);
+
+  // Auto-boot WebContainer on mount
+  useEffect(() => {
+    let cancelled = false;
+    const boot = async () => {
+      setContainerStatus('booting');
+      try {
+        const manager = new WebContainerManager(addLog);
+        await manager.bootContainer();
+        if (cancelled) return;
+        managerRef.current = manager;
+        setContainerInstance(manager.container);
+        setContainerStatus('online');
+        addLog('✅ WebContainer booted and ready');
+      } catch (err) {
+        if (cancelled) return;
+        setContainerStatus('offline');
+        addLog(`❌ Failed to boot WebContainer: ${err}`);
+      }
+    };
+    boot();
+    return () => {
+      cancelled = true;
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   const fetchPRs = async () => {
     if (!githubService) return;
@@ -122,9 +152,16 @@ export function App() {
 
   const runCI = async (pr: PR) => {
     if (!githubService) return;
+    if (!managerRef.current || containerStatus !== 'online') {
+      addLog(
+        '❌ WebContainer is not ready yet. Please wait for it to finish booting.'
+      );
+      return;
+    }
 
     setRunningPRs((prev) => new Set(prev).add(pr.id));
     setCurrentStage('Initializing...');
+    setContainerStatus('busy');
     try {
       // Update PR status
       setPrs((prev) =>
@@ -140,17 +177,10 @@ export function App() {
         )
       );
 
-      // Create WebContainer and mount files
-      addLog('🚀 Starting CI for repo: ' + owner + '/' + repo);
-      const manager = new WebContainerManager(addLog);
-      addLog('📦 Booting WebContainer...');
-      await manager.bootContainer();
-      addLog('✅ WebContainer booted');
-
-      // Store container for terminal access immediately after boot
-      setContainerInstance(manager.container);
+      const manager = managerRef.current;
 
       // Fetch and mount repository files (full codebase for CI)
+      addLog('🚀 Starting CI for repo: ' + owner + '/' + repo);
       addLog('📥 Fetching repository files...');
       const containerFiles = await githubService.createContainerFilesFromRepo();
       addLog(
@@ -259,8 +289,7 @@ export function App() {
         )
       );
 
-      // Cleanup
-      await manager.teardown();
+      // No teardown — container stays booted for reuse
     } catch (err) {
       const errorMessage = err instanceof Error ? err.message : 'Unknown error';
       setPrs((prev) =>
@@ -283,6 +312,7 @@ export function App() {
         return newSet;
       });
       setCurrentStage('');
+      setContainerStatus('online');
     }
   };
 
@@ -307,7 +337,7 @@ export function App() {
                 onSettingsChange={setSettings}
               />
             </div>
-            <StatusIndicator status={githubService ? 'online' : 'offline'} />
+            <StatusIndicator status={containerStatus} />
           </div>
         </div>
       </header>
