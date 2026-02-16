@@ -9,6 +9,10 @@ import {
 import { WebContainerManager } from '../../../../libs/shared/webcontainer-manager/src/index.js';
 import { CIPipelineOrchestrator } from '../../../../libs/shared/ci-pipeline/src/index.js';
 import { DebugLogSidebar } from './components/DebugLogSidebar';
+import { SettingsPanel, loadSettings } from './components/SettingsPanel';
+import type { AppSettings } from './components/SettingsPanel';
+import { WebContainerTerminal } from './components/WebContainerTerminal';
+import type { WebContainer } from '@webcontainer/api';
 
 export interface PR extends PRData {
   status: 'pending' | 'running' | 'success' | 'failure';
@@ -33,6 +37,8 @@ export function App() {
   const [currentStageKey, setCurrentStageKey] = useState<string>('');
   const [isLogSidebarOpen, setIsLogSidebarOpen] = useState(false);
   const pipelineRef = useRef<CIPipelineOrchestrator | null>(null);
+  const [settings, setSettings] = useState<AppSettings>(loadSettings);
+  const containerRef = useRef<WebContainer | null>(null);
 
   useEffect(() => {
     if (token && owner && repo) {
@@ -152,8 +158,55 @@ export function App() {
       await manager.container?.mount(containerFiles);
       addLog('✅ Files mounted successfully');
 
+      // Store container ref for terminal access
+      containerRef.current = manager.container;
+
+      // Build pipeline config from settings
+      const pipelineConfig: Record<
+        string,
+        { name: string; command: string; args: string[]; cwd?: string }
+      > = {};
+      if (settings.buildCommand) {
+        const parts = settings.buildCommand.trim().split(/\s+/);
+        pipelineConfig.build = {
+          name: 'build',
+          command: parts[0],
+          args: parts.slice(1),
+          ...(settings.workingDirectory
+            ? { cwd: settings.workingDirectory }
+            : {}),
+        };
+      } else if (settings.workingDirectory) {
+        pipelineConfig.build = {
+          name: 'build',
+          command: 'npm',
+          args: ['run', 'build'],
+          cwd: settings.workingDirectory,
+        };
+      }
+      if (settings.workingDirectory) {
+        pipelineConfig.install = {
+          name: 'install',
+          command: 'npm',
+          args: ['install', '--no-audit', '--no-fund', '--ignore-scripts'],
+          cwd: settings.workingDirectory,
+        };
+        if (!pipelineConfig.test) {
+          pipelineConfig.test = {
+            name: 'test',
+            command: 'npm',
+            args: ['test'],
+            cwd: settings.workingDirectory,
+          };
+        }
+      }
+
       // Run pipeline
-      const pipeline = new CIPipelineOrchestrator(manager, {}, addLog);
+      const pipeline = new CIPipelineOrchestrator(
+        manager,
+        pipelineConfig,
+        addLog
+      );
       pipelineRef.current = pipeline;
       const results = await pipeline.runPipeline();
 
@@ -240,6 +293,10 @@ export function App() {
                 <span>📋</span>
                 <span>Debug Logs</span>
               </button>
+              <SettingsPanel
+                settings={settings}
+                onSettingsChange={setSettings}
+              />
             </div>
             <StatusIndicator status={githubService ? 'online' : 'offline'} />
           </div>
@@ -321,6 +378,10 @@ export function App() {
         onClose={() => setIsLogSidebarOpen(false)}
         logs={ciLogs}
       />
+
+      {settings.terminalEnabled && containerRef.current && (
+        <WebContainerTerminal container={containerRef.current} />
+      )}
     </div>
   );
 }
