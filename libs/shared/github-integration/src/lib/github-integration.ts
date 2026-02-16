@@ -116,8 +116,8 @@ export class GitHubIntegrationService {
 
   // Helper to create WebContainer files from repository using recursive tree API
   async createContainerFilesFromRepo(): Promise<Record<string, any>> {
-    const tree = await this.fetchRepoTree();
-    console.log('Fetched tree with', tree.length, 'items');
+    const { tree, branch } = await this.fetchRepoTree();
+    console.log(`Fetched tree with ${tree.length} items from branch "${branch}"`);
 
     // Filter to text-based files only, skip huge files and binary extensions
     const binaryExtensions = new Set(['png', 'jpg', 'jpeg', 'gif', 'ico', 'svg', 'woff', 'woff2', 'ttf', 'eot', 'mp3', 'mp4', 'webp', 'zip', 'tar', 'gz', 'pdf']);
@@ -138,23 +138,25 @@ export class GitHubIntegrationService {
       return true;
     });
 
-    console.log('Fetching', filesToFetch.length, 'files');
+    console.log(`Filtered to ${filesToFetch.length} files to fetch`);
 
-    // Fetch file contents in parallel batches of 15
-    const batchSize = 15;
+    // Fetch file contents in parallel batches using raw.githubusercontent.com
+    const rawBaseUrl = `https://raw.githubusercontent.com/${this.owner}/${this.repo}/${branch}`;
+    const batchSize = 20;
     const fileEntries: { path: string; content: string }[] = [];
+    let failCount = 0;
 
     for (let i = 0; i < filesToFetch.length; i += batchSize) {
       const batch = filesToFetch.slice(i, i + batchSize);
       const results = await Promise.allSettled(
         batch.map(async (item) => {
-          const response = await fetch(item.url, {
+          const rawUrl = `${rawBaseUrl}/${item.path}`;
+          const response = await fetch(rawUrl, {
             headers: {
               'Authorization': `token ${this.token}`,
-              'Accept': 'application/vnd.github.v3.raw',
             },
           });
-          if (!response.ok) throw new Error(`${response.status}`);
+          if (!response.ok) throw new Error(`HTTP ${response.status} for ${item.path}`);
           const content = await response.text();
           return { path: item.path, content };
         })
@@ -162,11 +164,14 @@ export class GitHubIntegrationService {
       for (const result of results) {
         if (result.status === 'fulfilled') {
           fileEntries.push(result.value);
+        } else {
+          failCount++;
+          console.warn('Failed to fetch file:', result.reason);
         }
       }
     }
 
-    console.log('Successfully fetched', fileEntries.length, 'files');
+    console.log(`Successfully fetched ${fileEntries.length} files, ${failCount} failed`);
 
     // Build WebContainer file tree structure
     // WebContainer expects: { 'dir': { directory: { 'file.txt': { file: { contents: '...' } } } } }
@@ -188,12 +193,15 @@ export class GitHubIntegrationService {
       current[fileName] = { file: { contents: entry.content } };
     }
 
+    const totalFiles = fileEntries.length;
+    console.log(`Built tree with ${Object.keys(root).length} top-level entries, ${totalFiles} total files`);
+
     return root;
   }
 
   // Fetch the full recursive tree using the Git Trees API (single request)
-  private async fetchRepoTree(): Promise<{ path: string; type: string; size: number; url: string }[]> {
-    // First get the default branch SHA
+  private async fetchRepoTree(): Promise<{ tree: { path: string; type: string; size: number; url: string }[]; branch: string }> {
+    // First get the default branch
     const repoResponse = await fetch(`${this.baseUrl}/repos/${this.owner}/${this.repo}`, {
       headers: {
         'Authorization': `token ${this.token}`,
@@ -225,6 +233,6 @@ export class GitHubIntegrationService {
       console.warn('⚠️ Repository tree was truncated — some files may be missing');
     }
 
-    return treeData.tree;
+    return { tree: treeData.tree, branch };
   }
 }
