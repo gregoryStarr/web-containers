@@ -114,107 +114,117 @@ export class GitHubIntegrationService {
     return await response.json() as PRData[];
   }
 
-  // Helper to create WebContainer files from repository
-  async createContainerFilesFromRepo(): Promise<Record<string, { file: { contents: string } }>> {
-    const files = await this.fetchEssentialRepoFiles();
-    console.log('Fetched files for CI:', files.map(f => f.path));
-    const containerFiles: Record<string, { file: { contents: string } }> = {};
+  // Helper to create WebContainer files from repository using recursive tree API
+  async createContainerFilesFromRepo(): Promise<Record<string, any>> {
+    const tree = await this.fetchRepoTree();
+    console.log('Fetched tree with', tree.length, 'items');
 
-    for (const file of files) {
-      if (file.type === 'file' && (file.size < 10000000 || file.name === 'package-lock.json')) { // Skip files larger than 10MB, ensuring package-lock.json is included
-        try {
-          const response = await fetch(file.url, {
+    // Filter to text-based files only, skip huge files and binary extensions
+    const binaryExtensions = new Set(['png', 'jpg', 'jpeg', 'gif', 'ico', 'svg', 'woff', 'woff2', 'ttf', 'eot', 'mp3', 'mp4', 'webp', 'zip', 'tar', 'gz', 'pdf']);
+    const skipDirs = new Set(['node_modules', '.git', 'dist', '.nx', '.next', '.cache', 'coverage', '.turbo']);
+
+    const filesToFetch = tree.filter(item => {
+      if (item.type !== 'blob') return false;
+      if (item.size > 500000 && !item.path.endsWith('package-lock.json') && !item.path.endsWith('yarn.lock')) return false;
+
+      // Skip files inside excluded directories
+      const parts = item.path.split('/');
+      if (parts.some(p => skipDirs.has(p))) return false;
+
+      // Skip binary files
+      const ext = item.path.split('.').pop()?.toLowerCase();
+      if (ext && binaryExtensions.has(ext)) return false;
+
+      return true;
+    });
+
+    console.log('Fetching', filesToFetch.length, 'files');
+
+    // Fetch file contents in parallel batches of 15
+    const batchSize = 15;
+    const fileEntries: { path: string; content: string }[] = [];
+
+    for (let i = 0; i < filesToFetch.length; i += batchSize) {
+      const batch = filesToFetch.slice(i, i + batchSize);
+      const results = await Promise.allSettled(
+        batch.map(async (item) => {
+          const response = await fetch(item.url, {
             headers: {
               'Authorization': `token ${this.token}`,
               'Accept': 'application/vnd.github.v3.raw',
             },
           });
-          if (!response.ok) {
-            throw new Error(`Failed to fetch file: ${response.statusText}`);
-          }
+          if (!response.ok) throw new Error(`${response.status}`);
           const content = await response.text();
-          // Strip the "web-containers/" prefix for proper mounting
-          const relativePath = file.path.replace(/^web-containers\//, '');
-          containerFiles[relativePath] = {
-            file: {
-              contents: content,
-            },
-          };
-        } catch (error) {
-          console.warn(`Failed to fetch ${file.path}:`, error);
+          return { path: item.path, content };
+        })
+      );
+      for (const result of results) {
+        if (result.status === 'fulfilled') {
+          fileEntries.push(result.value);
         }
       }
     }
 
-    return containerFiles;
+    console.log('Successfully fetched', fileEntries.length, 'files');
+
+    // Build WebContainer file tree structure
+    // WebContainer expects: { 'dir': { directory: { 'file.txt': { file: { contents: '...' } } } } }
+    const root: Record<string, any> = {};
+
+    for (const entry of fileEntries) {
+      const parts = entry.path.split('/');
+      let current = root;
+
+      for (let i = 0; i < parts.length - 1; i++) {
+        const dirName = parts[i];
+        if (!current[dirName]) {
+          current[dirName] = { directory: {} };
+        }
+        current = current[dirName].directory;
+      }
+
+      const fileName = parts[parts.length - 1];
+      current[fileName] = { file: { contents: entry.content } };
+    }
+
+    return root;
   }
 
-  // Fetch essential files from repository (non-recursive for simplicity)
-  private async fetchEssentialRepoFiles(): Promise<GitHubFileItem[]> {
-    const url = `${this.baseUrl}/repos/${this.owner}/${this.repo}/contents/`;
-    console.log('Fetching from URL:', url);
-    const response = await fetch(url, {
+  // Fetch the full recursive tree using the Git Trees API (single request)
+  private async fetchRepoTree(): Promise<{ path: string; type: string; size: number; url: string }[]> {
+    // First get the default branch SHA
+    const repoResponse = await fetch(`${this.baseUrl}/repos/${this.owner}/${this.repo}`, {
       headers: {
         'Authorization': `token ${this.token}`,
         'Accept': 'application/vnd.github.v3+json',
       },
     });
-
-    console.log('Response status:', response.status, response.statusText);
-    if (!response.ok) {
-      const errorText = await response.text();
-      console.error('API Error response:', errorText);
-      throw new Error(`Failed to fetch repo contents: ${response.status} ${response.statusText}`);
+    if (!repoResponse.ok) {
+      throw new Error(`Failed to fetch repo info: ${repoResponse.statusText}`);
     }
+    const repoData = await repoResponse.json() as { default_branch: string };
+    const branch = repoData.default_branch;
 
-    const contents = await response.json() as GitHubFileItem[];
-    console.log('Raw API response:', JSON.stringify(contents, null, 2));
-    const essentialFiles: GitHubFileItem[] = [];
-
-    for (const item of contents) {
-      console.log('Processing item:', item.name, item.type, item.path);
-      if (item.type === 'file') {
-        // Include essential files based on extension or config pattern
-        const ext = item.name.split('.').pop()?.toLowerCase();
-        const essentialExtensions = ['json', 'js', 'jsx', 'ts', 'tsx', 'html', 'css', 'md', 'lock', 'yml', 'yaml'];
-        
-        if (
-          (ext && essentialExtensions.includes(ext)) || 
-          item.name.includes('config') ||
-          item.name === 'Dockerfile' ||
-          item.name === '.gitignore'
-        ) {
-          essentialFiles.push(item);
-        }
-  } else if (item.type === 'dir') {
-    console.log('Found directory:', item.name);
-    // Include key directories
-    if (item.name === 'src' || item.name === 'libs' || item.name === 'apps' ||
-        item.name === 'public' || item.name === 'dist' || item.name === 'web-containers') {
-      console.log('Fetching subdirectory:', item.name);
-      // Fetch files from these directories (shallow)
-      const subResponse = await fetch(`${url}${item.name}`, {
+    // Get the recursive tree for the default branch
+    const treeResponse = await fetch(
+      `${this.baseUrl}/repos/${this.owner}/${this.repo}/git/trees/${branch}?recursive=1`,
+      {
         headers: {
           'Authorization': `token ${this.token}`,
           'Accept': 'application/vnd.github.v3+json',
         },
-      });
-      console.log('Sub response status:', subResponse.status);
-      if (subResponse.ok) {
-        const subContents = await subResponse.json() as GitHubFileItem[];
-        console.log('Sub contents:', subContents.length, 'items');
-        const filtered = subContents.filter(subItem =>
-          subItem.type === 'file' && (subItem.size < 100000 || subItem.name === 'package-lock.json') // < 100KB or package-lock.json
-        );
-        console.log('Filtered files:', filtered.length, filtered.map(f => f.name));
-        essentialFiles.push(...filtered);
       }
-    } else {
-      console.log('Skipping directory:', item.name);
+    );
+    if (!treeResponse.ok) {
+      throw new Error(`Failed to fetch tree: ${treeResponse.statusText}`);
     }
-      }
+    const treeData = await treeResponse.json() as { tree: { path: string; type: string; size: number; url: string }[]; truncated: boolean };
+
+    if (treeData.truncated) {
+      console.warn('⚠️ Repository tree was truncated — some files may be missing');
     }
 
-    return essentialFiles;
+    return treeData.tree;
   }
 }
