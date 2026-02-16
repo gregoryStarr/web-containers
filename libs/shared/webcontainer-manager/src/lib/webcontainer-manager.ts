@@ -8,6 +8,9 @@ export interface CommandResult {
   duration: number;
 }
 
+// Module-level singleton — WebContainer.boot() can only be called once per page
+let bootPromise: Promise<WebContainer> | null = null;
+
 export class WebContainerManager {
   private _container: WebContainer | null = null;
   private isBooted = false;
@@ -19,16 +22,24 @@ export class WebContainerManager {
 
   async bootContainer(files: Record<string, { file: { contents: string } }> = {}): Promise<void> {
     if (this.isBooted) {
-      throw new Error('Container is already booted');
+      this.logger?.('Container already booted on this manager instance, skipping.');
+      return;
     }
 
     try {
-      this._container = await WebContainer.boot();
+      if (!bootPromise) {
+        this.logger?.('📦 Booting WebContainer (first boot)...');
+        bootPromise = WebContainer.boot();
+      } else {
+        this.logger?.('📦 Reusing existing WebContainer instance...');
+      }
+      this._container = await bootPromise;
       if (Object.keys(files).length > 0) {
         await this._container.mount(files);
       }
       this.isBooted = true;
     } catch (error) {
+      bootPromise = null; // Allow retry on failure
       throw new Error(`Failed to boot WebContainer: ${error}`);
     }
   }
