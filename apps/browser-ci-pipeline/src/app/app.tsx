@@ -162,44 +162,52 @@ export function App() {
       containerRef.current = manager.container;
 
       // Build pipeline config from settings
+      const pm = settings.packageManager || 'npm';
+      const installArgs: Record<string, string[]> = {
+        npm: ['install', '--no-audit', '--no-fund', '--ignore-scripts'],
+        yarn: ['install'],
+        pnpm: ['install', '--no-frozen-lockfile'],
+      };
+      const cwdOpt = settings.workingDirectory
+        ? { cwd: settings.workingDirectory }
+        : {};
+
       const pipelineConfig: Record<
         string,
         { name: string; command: string; args: string[]; cwd?: string }
       > = {};
+
+      // Always apply package manager (even without custom cwd)
+      pipelineConfig.install = {
+        name: 'install',
+        command: pm,
+        args: installArgs[pm],
+        ...cwdOpt,
+      };
+
       if (settings.buildCommand) {
         const parts = settings.buildCommand.trim().split(/\s+/);
         pipelineConfig.build = {
           name: 'build',
           command: parts[0],
           args: parts.slice(1),
-          ...(settings.workingDirectory
-            ? { cwd: settings.workingDirectory }
-            : {}),
+          ...cwdOpt,
         };
-      } else if (settings.workingDirectory) {
+      } else {
         pipelineConfig.build = {
           name: 'build',
-          command: 'npm',
+          command: pm,
           args: ['run', 'build'],
-          cwd: settings.workingDirectory,
+          ...cwdOpt,
         };
       }
-      if (settings.workingDirectory) {
-        pipelineConfig.install = {
-          name: 'install',
-          command: 'npm',
-          args: ['install', '--no-audit', '--no-fund', '--ignore-scripts'],
-          cwd: settings.workingDirectory,
-        };
-        if (!pipelineConfig.test) {
-          pipelineConfig.test = {
-            name: 'test',
-            command: 'npm',
-            args: ['test'],
-            cwd: settings.workingDirectory,
-          };
-        }
-      }
+
+      pipelineConfig.test = {
+        name: 'test',
+        command: pm,
+        args: ['test'],
+        ...cwdOpt,
+      };
 
       // Run pipeline
       const pipeline = new CIPipelineOrchestrator(

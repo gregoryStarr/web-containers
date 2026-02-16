@@ -2,6 +2,7 @@ import { useState, useRef, useEffect } from 'react';
 
 export interface AppSettings {
   terminalEnabled: boolean;
+  packageManager: 'npm' | 'yarn' | 'pnpm';
   workingDirectory: string;
   buildCommand: string;
 }
@@ -10,6 +11,7 @@ const SETTINGS_KEY = 'browser-ci-pipeline-settings';
 
 const defaultSettings: AppSettings = {
   terminalEnabled: false,
+  packageManager: 'npm',
   workingDirectory: '',
   buildCommand: '',
 };
@@ -95,6 +97,26 @@ export function SettingsPanel({
               />
             </div>
           </label>
+          {/* Package Manager */}
+          <div className="mb-4">
+            <label className="block text-sm text-gray-600 mb-1">
+              Package Manager
+            </label>
+            <select
+              value={settings.packageManager}
+              onChange={(e) =>
+                update({
+                  packageManager: e.target
+                    .value as AppSettings['packageManager'],
+                })
+              }
+              className="w-full px-2 py-1.5 text-sm border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white"
+            >
+              <option value="npm">npm</option>
+              <option value="yarn">yarn</option>
+              <option value="pnpm">pnpm</option>
+            </select>
+          </div>
 
           {/* Working Directory */}
           <div className="mb-4">
