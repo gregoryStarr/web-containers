@@ -56,20 +56,13 @@ export class WebContainerManager {
       this.logger?.('node_modules not found, proceeding with installation...');
     }
 
+    // Write .npmrc to disable engine-strict checks (WebContainer runs Node 18,
+    // but some transitive deps like minimatch@10 declare Node >=20)
     try {
-      this.logger?.('Checking for package-lock.json...');
-      // We can't easily check file existence without throwing, so we'll try to read it or list dir
-      // listing dir is safer as readFile might throw if not found
-      const rootFiles = await this._container.fs.readdir('.');
-      const hasLockfile = rootFiles.includes('package-lock.json');
-      const hasPackageJson = rootFiles.includes('package.json');
-
-      if (!hasLockfile && hasPackageJson) {
-        this.logger?.('⚠️ package-lock.json not found, falling back to npm install...');
-        return this.executeCommand('npm', ['install']);
-      }
+      this.logger?.('📝 Writing .npmrc with engine-strict=false for Node 18 compatibility...');
+      await this._container.fs.writeFile('.npmrc', 'engine-strict=false\n');
     } catch (err) {
-      this.logger?.(`⚠️ Error checking text files: ${err}`);
+      this.logger?.(`⚠️ Could not write .npmrc: ${err}`);
     }
 
     return this.executeCommand(command, args);

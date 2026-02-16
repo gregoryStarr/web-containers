@@ -12,7 +12,6 @@ import { DebugLogSidebar } from './components/DebugLogSidebar';
 import { SettingsPanel, loadSettings } from './components/SettingsPanel';
 import type { AppSettings } from './components/SettingsPanel';
 import { WebContainerTerminal } from './components/WebContainerTerminal';
-import type { WebContainer } from '@webcontainer/api';
 
 export interface PR extends PRData {
   status: 'pending' | 'running' | 'success' | 'failure';
@@ -38,7 +37,9 @@ export function App() {
   const [isLogSidebarOpen, setIsLogSidebarOpen] = useState(false);
   const pipelineRef = useRef<CIPipelineOrchestrator | null>(null);
   const [settings, setSettings] = useState<AppSettings>(loadSettings);
-  const containerRef = useRef<WebContainer | null>(null);
+  const [containerInstance, setContainerInstance] = useState<
+    InstanceType<typeof WebContainerManager>['container'] | null
+  >(null);
 
   useEffect(() => {
     if (token && owner && repo) {
@@ -146,6 +147,9 @@ export function App() {
       await manager.bootContainer();
       addLog('✅ WebContainer booted');
 
+      // Store container for terminal access immediately after boot
+      setContainerInstance(manager.container);
+
       // Fetch and mount repository files (full codebase for CI)
       addLog('📥 Fetching repository files...');
       const containerFiles = await githubService.createContainerFilesFromRepo();
@@ -157,9 +161,6 @@ export function App() {
       addLog('🔧 Mounting files in WebContainer...');
       await manager.container?.mount(containerFiles);
       addLog('✅ Files mounted successfully');
-
-      // Store container ref for terminal access
-      containerRef.current = manager.container;
 
       // Build pipeline config from settings
       const pm = settings.packageManager || 'npm';
@@ -387,8 +388,8 @@ export function App() {
         logs={ciLogs}
       />
 
-      {settings.terminalEnabled && containerRef.current && (
-        <WebContainerTerminal container={containerRef.current} />
+      {settings.terminalEnabled && containerInstance && (
+        <WebContainerTerminal container={containerInstance} />
       )}
     </div>
   );
