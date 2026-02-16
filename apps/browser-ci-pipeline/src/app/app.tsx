@@ -165,7 +165,7 @@ export function App() {
       const pm = settings.packageManager || 'npm';
       const installArgs: Record<string, string[]> = {
         npm: ['install', '--no-audit', '--no-fund', '--ignore-scripts'],
-        yarn: ['install'],
+        yarn: ['install', '--ignore-engines'],
         pnpm: ['install', '--no-frozen-lockfile'],
       };
       const cwdOpt = settings.workingDirectory
