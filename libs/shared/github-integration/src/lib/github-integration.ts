@@ -118,7 +118,7 @@ export class GitHubIntegrationService {
       },
     });
     if (!response.ok) throw new Error(`Failed to fetch user: ${response.statusText}`);
-    return await response.json();
+    return await response.json() as { login: string };
   }
 
   async fetchOrgs(): Promise<{ login: string }[]> {
@@ -129,7 +129,7 @@ export class GitHubIntegrationService {
       },
     });
     if (!response.ok) throw new Error(`Failed to fetch orgs: ${response.statusText}`);
-    return await response.json();
+    return await response.json() as { login: string }[];
   }
 
   async fetchRepos(owner: string, type: 'user' | 'org' = 'user'): Promise<{ name: string }[]> {
@@ -170,7 +170,7 @@ export class GitHubIntegrationService {
          }
          throw new Error(`Failed to fetch repos for ${owner}: ${response.statusText}`);
     }
-    return await response.json();
+    return await response.json() as { name: string }[];
   }
 
   // Helper to create WebContainer files from repository using recursive tree API
@@ -184,26 +184,37 @@ export class GitHubIntegrationService {
 
     const filesToFetch = tree.filter(item => {
       if (item.type !== 'blob') return false;
-      if (item.size > 500000 && !item.path.endsWith('package-lock.json') && !item.path.endsWith('yarn.lock')) return false;
+      
+      // Log some skips for debugging
+      const debugSkip = (reason: string) => {
+        // Only log first few to avoid spam
+        // if (Math.random() > 0.999) console.log(`Skipped ${item.path}: ${reason}`);
+        return false;
+      };
+
+      if (item.size > 500000 && !item.path.endsWith('package-lock.json') && !item.path.endsWith('yarn.lock')) return debugSkip('Size too large');
 
       // Skip files inside excluded directories
       const parts = item.path.split('/');
-      if (parts.some(p => skipDirs.has(p))) return false;
+      if (parts.some(p => skipDirs.has(p))) return debugSkip(`In excluded dir: ${parts.find(p => skipDirs.has(p))}`);
 
       // Skip heavy binary files
       const ext = item.path.split('.').pop()?.toLowerCase();
-      if (ext && ignoredExtensions.has(ext)) return false;
+      if (ext && ignoredExtensions.has(ext)) return debugSkip('Ignored extension');
 
       return true;
     });
 
     this.logger?.(`📋 Filtered to ${filesToFetch.length} files to fetch (from ${tree.length} total)`);
+    if (filesToFetch.length < 50) {
+        this.logger?.(`Files to fetch: ${filesToFetch.map(f => f.path).join(', ')}`);
+    }
 
     // List of extensions to treat as binary (fetch as Uint8Array)
     const binaryExtensions = new Set(['png', 'jpg', 'jpeg', 'gif', 'ico', 'woff', 'woff2', 'ttf', 'eot', 'webp', 'bin']);
 
-    // Fetch file contents in parallel batches using raw.githubusercontent.com
-    const rawBaseUrl = `https://raw.githubusercontent.com/${this.owner}/${this.repo}/${branch}`;
+    // Fetch file contents in parallel batches using the Blob API (item.url)
+    // This avoids CORS/token issues with raw.githubusercontent.com for private repos
     const batchSize = 20;
     const fileEntries: { path: string; content: string | Uint8Array }[] = [];
     let failCount = 0;
@@ -212,21 +223,32 @@ export class GitHubIntegrationService {
       const batch = filesToFetch.slice(i, i + batchSize);
       const results = await Promise.allSettled(
         batch.map(async (item) => {
-          const rawUrl = `${rawBaseUrl}/${item.path}`;
-          const response = await fetch(rawUrl, {
+          // item.url is the API url for the blob: https://api.github.com/repos/.../git/blobs/SHA
+          const response = await fetch(item.url, {
             headers: {
               'Authorization': `token ${this.token}`,
+              'Accept': 'application/vnd.github.v3+json',
             },
           });
           if (!response.ok) throw new Error(`HTTP ${response.status} for ${item.path}`);
           
+          const data = await response.json() as { content: string; encoding: string };
+          // content is base64 encoded
+          const base64Content = data.content.replace(/\n/g, '');
+          const binaryString = atob(base64Content);
+          const len = binaryString.length;
+          const bytes = new Uint8Array(len);
+          for (let k = 0; k < len; k++) {
+            bytes[k] = binaryString.charCodeAt(k);
+          }
+
           const ext = item.path.split('.').pop()?.toLowerCase();
           if (ext && binaryExtensions.has(ext)) {
-            const buffer = await response.arrayBuffer();
-            return { path: item.path, content: new Uint8Array(buffer) };
+            return { path: item.path, content: bytes };
           } else {
-            const content = await response.text();
-            return { path: item.path, content };
+            // Text file - decode UTF-8
+            const text = new TextDecoder().decode(bytes);
+            return { path: item.path, content: text };
           }
         })
       );
@@ -244,6 +266,13 @@ export class GitHubIntegrationService {
       this.logger?.(`⚠️ Failed to fetch ${failCount} files`);
     }
     this.logger?.(`✅ Successfully fetched ${fileEntries.length} files`);
+
+    // Validation: Ensure package.json exists
+    if (!fileEntries.some(f => f.path === 'package.json')) {
+      const Msg = `⚠️ Warning: package.json not found in fetched files! CI might fail.`;
+      this.logger?.(Msg);
+      // throw new Error(Msg); // Downgrade to warning for now to debug
+    }
 
     // Build WebContainer file tree structure
     // WebContainer expects: { 'dir': { directory: { 'file.txt': { file: { contents: '...' } } } } }
