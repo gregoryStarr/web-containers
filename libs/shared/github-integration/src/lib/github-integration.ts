@@ -110,6 +110,69 @@ export class GitHubIntegrationService {
     return await response.json() as PRData[];
   }
 
+  async fetchUser(): Promise<{ login: string }> {
+    const response = await fetch(`${this.baseUrl}/user`, {
+      headers: {
+        Authorization: `token ${this.token}`,
+        Accept: 'application/vnd.github.v3+json',
+      },
+    });
+    if (!response.ok) throw new Error(`Failed to fetch user: ${response.statusText}`);
+    return await response.json();
+  }
+
+  async fetchOrgs(): Promise<{ login: string }[]> {
+    const response = await fetch(`${this.baseUrl}/user/orgs`, {
+      headers: {
+        Authorization: `token ${this.token}`,
+        Accept: 'application/vnd.github.v3+json',
+      },
+    });
+    if (!response.ok) throw new Error(`Failed to fetch orgs: ${response.statusText}`);
+    return await response.json();
+  }
+
+  async fetchRepos(owner: string, type: 'user' | 'org' = 'user'): Promise<{ name: string }[]> {
+    // If fetching for the authenticated user (and type is user), use /user/repos to see private repos too
+    // Otherwise use /users/:username/repos or /orgs/:org/repos
+    let url = '';
+    if (type === 'org') {
+      url = `${this.baseUrl}/orgs/${owner}/repos?per_page=100&sort=updated`;
+    } else {
+      // For a specific user (public)
+      url = `${this.baseUrl}/users/${owner}/repos?per_page=100&sort=updated`;
+    }
+    
+    // Optimisation: if owner matches authenticated user, we could use /user/repos, 
+    // but the UI typically selects "Owner" which might be self. 
+    // Let's try to handle the "self" case if we can, but simpler to use the public endpoints first.
+    // Actually, /user/repos lists all repos the user has access to (owned + collab + org).
+    // Better to stick to specific owner listings to filter correctly.
+
+    const response = await fetch(url, {
+      headers: {
+        Authorization: `token ${this.token}`,
+        Accept: 'application/vnd.github.v3+json',
+      },
+    });
+    
+    if (!response.ok) {
+        // Fallback: maybe it's the authenticated user? try /user/repos?affiliation=owner
+         const selfResponse = await fetch(`${this.baseUrl}/user/repos?per_page=100&sort=updated&affiliation=owner`, {
+            headers: {
+                Authorization: `token ${this.token}`,
+                Accept: 'application/vnd.github.v3+json',
+            },
+         });
+         if (selfResponse.ok) {
+             const repos = await selfResponse.json() as { name: string; owner: { login: string } }[];
+             return repos.filter(r => r.owner.login === owner);
+         }
+         throw new Error(`Failed to fetch repos for ${owner}: ${response.statusText}`);
+    }
+    return await response.json();
+  }
+
   // Helper to create WebContainer files from repository using recursive tree API
   async createContainerFilesFromRepo(): Promise<Record<string, any>> {
     const { tree, branch } = await this.fetchRepoTree();

@@ -30,6 +30,8 @@ export function App() {
   const [repo, setRepo] = useState('Web-Containers');
   const [githubService, setGithubService] =
     useState<GitHubIntegrationService | null>(null);
+  const [availableOwners, setAvailableOwners] = useState<string[]>([]);
+  const [availableRepos, setAvailableRepos] = useState<string[]>([]);
   const [runningPRs, setRunningPRs] = useState<Set<number>>(new Set());
   const [ciLogs, setCiLogs] = useState<string[]>([]);
   const [currentStage, setCurrentStage] = useState<string>('');
@@ -54,6 +56,73 @@ export function App() {
       setGithubService(null);
     }
   }, [token, owner, repo]);
+
+  // Fetch available owners (user + orgs) when token changes
+  useEffect(() => {
+    if (!token) {
+      setAvailableOwners([]);
+      return;
+    }
+    const fetchOwners = async () => {
+      try {
+        // Use a temp service to fetch metadata
+        const svc = new GitHubIntegrationService(token, '', '', addLog);
+        const [user, orgs] = await Promise.all([
+          svc.fetchUser(),
+          svc.fetchOrgs(),
+        ]);
+        const owners = [user.login, ...orgs.map((o) => o.login)];
+        setAvailableOwners(owners);
+
+        // Auto-select logged-in user if owner is empty or not in list
+        if (!owner || !owners.includes(owner)) {
+          setOwner(user.login);
+        }
+      } catch (err) {
+        console.error('Failed to fetch owners:', err);
+        addLog(
+          `⚠️ Failed to fetch account info: ${
+            err instanceof Error ? err.message : String(err)
+          }`
+        );
+      }
+    };
+    fetchOwners();
+  }, [token]);
+
+  // Fetch repositories when owner changes
+  useEffect(() => {
+    if (!token || !owner) {
+      setAvailableRepos([]);
+      return;
+    }
+    const fetchRepos = async () => {
+      try {
+        const svc = new GitHubIntegrationService(token, owner, '', addLog);
+        // Determine type: if owner is in availableOwners[0], it's 'user' (usually), else 'org'.
+        // But safer to just guess or try. The service handles type param.
+        // We know availableOwners[0] is the authenticated user.
+        // If owner === availableOwners[0], fetch 'user' repos. Else 'org' repos.
+        // Note: fetchRepos with type='user' fetches authenticated user's repos if owner matches.
+
+        const isUser =
+          availableOwners.length > 0 && owner === availableOwners[0];
+        const type = isUser ? 'user' : 'org';
+
+        const repos = await svc.fetchRepos(owner, type);
+        setAvailableRepos(repos.map((r) => r.name));
+      } catch (err) {
+        console.error(`Failed to fetch repos for ${owner}:`, err);
+        addLog(
+          `⚠️ Failed to fetch repos for ${owner}: ${
+            err instanceof Error ? err.message : String(err)
+          }`
+        );
+        setAvailableRepos([]);
+      }
+    };
+    fetchRepos();
+  }, [token, owner, availableOwners]);
 
   // Auto-boot WebContainer on mount
   useEffect(() => {
@@ -357,27 +426,77 @@ export function App() {
               onChange={(e) => setToken(e.target.value)}
               className="px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
             />
-            <input
-              type="text"
-              placeholder="Owner (e.g., facebook)"
-              value={owner}
-              onChange={(e) => setOwner(e.target.value)}
-              className="px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-            />
-            <input
-              type="text"
-              placeholder="Repository (e.g., react)"
-              value={repo}
-              onChange={(e) => setRepo(e.target.value)}
-              className="px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-            />
-            <button
-              onClick={fetchPRs}
-              disabled={!githubService || loading}
-              className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 disabled:bg-gray-400 disabled:cursor-not-allowed"
-            >
-              {loading ? 'Loading...' : 'Fetch PRs'}
-            </button>
+            {/* Owner Selection */}
+            <div className="flex flex-col">
+              <label className="block text-sm font-medium text-gray-700 mb-1">
+                Owner
+              </label>
+              {availableOwners.length > 0 ? (
+                <select
+                  value={owner}
+                  onChange={(e) => setOwner(e.target.value)}
+                  className="px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white"
+                >
+                  <option value="" disabled>
+                    Select Owner
+                  </option>
+                  {availableOwners.map((o) => (
+                    <option key={o} value={o}>
+                      {o}
+                    </option>
+                  ))}
+                </select>
+              ) : (
+                <input
+                  type="text"
+                  placeholder="Owner (e.g., facebook)"
+                  value={owner}
+                  onChange={(e) => setOwner(e.target.value)}
+                  className="px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                />
+              )}
+            </div>
+
+            {/* Repo Selection */}
+            <div className="flex flex-col">
+              <label className="block text-sm font-medium text-gray-700 mb-1">
+                Repository
+              </label>
+              {availableRepos.length > 0 ? (
+                <select
+                  value={repo}
+                  onChange={(e) => setRepo(e.target.value)}
+                  className="px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white"
+                >
+                  <option value="" disabled>
+                    Select Repository
+                  </option>
+                  {availableRepos.map((r) => (
+                    <option key={r} value={r}>
+                      {r}
+                    </option>
+                  ))}
+                </select>
+              ) : (
+                <input
+                  type="text"
+                  placeholder="Repository (e.g., react)"
+                  value={repo}
+                  onChange={(e) => setRepo(e.target.value)}
+                  className="px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                />
+              )}
+            </div>
+
+            <div className="flex items-end">
+              <button
+                onClick={fetchPRs}
+                disabled={!githubService || loading}
+                className="w-full px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 disabled:bg-gray-400 disabled:cursor-not-allowed"
+              >
+                {loading ? 'Loading...' : 'Fetch PRs'}
+              </button>
+            </div>
           </div>
           {error && <p className="mt-2 text-red-600 text-sm">{error}</p>}
         </div>
