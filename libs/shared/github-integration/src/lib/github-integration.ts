@@ -178,8 +178,8 @@ export class GitHubIntegrationService {
     const { tree, branch } = await this.fetchRepoTree();
     this.logger?.(`🌲 Fetched tree with ${tree.length} items from branch "${branch}"`);
 
-    // Filter to text-based files only, skip huge files and binary extensions
-    const binaryExtensions = new Set(['png', 'jpg', 'jpeg', 'gif', 'ico', 'svg', 'woff', 'woff2', 'ttf', 'eot', 'mp3', 'mp4', 'webp', 'zip', 'tar', 'gz', 'pdf']);
+    // Filter out heavy binaries (archives, videos) but allow images/fonts/code
+    const ignoredExtensions = new Set(['zip', 'tar', 'gz', 'rar', '7z', 'pdf', 'mp3', 'mp4', 'mov', 'avi', 'exe', 'dmg', 'iso', 'bin']);
     const skipDirs = new Set(['node_modules', '.git', 'dist', '.nx', '.next', '.cache', 'coverage', '.turbo']);
 
     const filesToFetch = tree.filter(item => {
@@ -190,19 +190,22 @@ export class GitHubIntegrationService {
       const parts = item.path.split('/');
       if (parts.some(p => skipDirs.has(p))) return false;
 
-      // Skip binary files
+      // Skip heavy binary files
       const ext = item.path.split('.').pop()?.toLowerCase();
-      if (ext && binaryExtensions.has(ext)) return false;
+      if (ext && ignoredExtensions.has(ext)) return false;
 
       return true;
     });
 
     this.logger?.(`📋 Filtered to ${filesToFetch.length} files to fetch (from ${tree.length} total)`);
 
+    // List of extensions to treat as binary (fetch as Uint8Array)
+    const binaryExtensions = new Set(['png', 'jpg', 'jpeg', 'gif', 'ico', 'woff', 'woff2', 'ttf', 'eot', 'webp', 'bin']);
+
     // Fetch file contents in parallel batches using raw.githubusercontent.com
     const rawBaseUrl = `https://raw.githubusercontent.com/${this.owner}/${this.repo}/${branch}`;
     const batchSize = 20;
-    const fileEntries: { path: string; content: string }[] = [];
+    const fileEntries: { path: string; content: string | Uint8Array }[] = [];
     let failCount = 0;
 
     for (let i = 0; i < filesToFetch.length; i += batchSize) {
@@ -216,8 +219,15 @@ export class GitHubIntegrationService {
             },
           });
           if (!response.ok) throw new Error(`HTTP ${response.status} for ${item.path}`);
-          const content = await response.text();
-          return { path: item.path, content };
+          
+          const ext = item.path.split('.').pop()?.toLowerCase();
+          if (ext && binaryExtensions.has(ext)) {
+            const buffer = await response.arrayBuffer();
+            return { path: item.path, content: new Uint8Array(buffer) };
+          } else {
+            const content = await response.text();
+            return { path: item.path, content };
+          }
         })
       );
       for (const result of results) {
@@ -256,7 +266,7 @@ export class GitHubIntegrationService {
     }
 
     const totalFiles = fileEntries.length;
-    console.log(`Built tree with ${Object.keys(root).length} top-level entries, ${totalFiles} total files`);
+    this.logger?.(`🌲 Built tree with ${Object.keys(root).length} top-level entries, ${totalFiles} total files`);
 
     return root;
   }
@@ -271,6 +281,7 @@ export class GitHubIntegrationService {
       },
     });
     if (!repoResponse.ok) {
+      this.logger?.(`❌ Failed to fetch repo info: ${repoResponse.statusText}`);
       throw new Error(`Failed to fetch repo info: ${repoResponse.statusText}`);
     }
     const repoData = await repoResponse.json() as { default_branch: string };
@@ -287,11 +298,13 @@ export class GitHubIntegrationService {
       }
     );
     if (!treeResponse.ok) {
+      this.logger?.(`❌ Failed to fetch tree: ${treeResponse.statusText}`);
       throw new Error(`Failed to fetch tree: ${treeResponse.statusText}`);
     }
     const treeData = await treeResponse.json() as { tree: { path: string; type: string; size: number; url: string }[]; truncated: boolean };
 
     if (treeData.truncated) {
+      this.logger?.('⚠️ Repository tree was truncated — some files may be missing');
       console.warn('⚠️ Repository tree was truncated — some files may be missing');
     }
 

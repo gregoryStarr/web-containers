@@ -1,4 +1,4 @@
-import { WebContainer } from '@webcontainer/api';
+import { WebContainer, FileSystemTree } from '@webcontainer/api';
 
 export interface CommandResult {
   success: boolean;
@@ -20,7 +20,7 @@ export class WebContainerManager {
     this.logger = logger;
   }
 
-  async bootContainer(files: Record<string, { file: { contents: string } }> = {}): Promise<void> {
+  async bootContainer(files: FileSystemTree = {}): Promise<void> {
     if (this.isBooted) {
       this.logger?.('Container already booted on this manager instance, skipping.');
       return;
