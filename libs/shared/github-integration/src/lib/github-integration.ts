@@ -174,8 +174,8 @@ export class GitHubIntegrationService {
   }
 
   // Helper to create WebContainer files from repository using recursive tree API
-  async createContainerFilesFromRepo(): Promise<Record<string, any>> {
-    const { tree, branch } = await this.fetchRepoTree();
+  async createContainerFilesFromRepo(ref?: string): Promise<Record<string, any>> {
+    const { tree, branch } = await this.fetchRepoTree(ref);
     this.logger?.(`🌲 Fetched tree with ${tree.length} items from branch "${branch}"`);
 
     // Filter out heavy binaries (archives, videos) but allow images/fonts/code
@@ -267,8 +267,8 @@ export class GitHubIntegrationService {
     }
     this.logger?.(`✅ Successfully fetched ${fileEntries.length} files`);
 
-    // Validation: Ensure package.json exists
-    if (!fileEntries.some(f => f.path === 'package.json')) {
+    // Validation: Ensure package.json exists anywhere
+    if (!fileEntries.some(f => f.path.endsWith('package.json'))) {
       const Msg = `⚠️ Warning: package.json not found in fetched files! CI might fail.`;
       this.logger?.(Msg);
       // throw new Error(Msg); // Downgrade to warning for now to debug
@@ -301,22 +301,26 @@ export class GitHubIntegrationService {
   }
 
   // Fetch the full recursive tree using the Git Trees API (single request)
-  private async fetchRepoTree(): Promise<{ tree: { path: string; type: string; size: number; url: string }[]; branch: string }> {
-    // First get the default branch
-    const repoResponse = await fetch(`${this.baseUrl}/repos/${this.owner}/${this.repo}`, {
-      headers: {
-        'Authorization': `token ${this.token}`,
-        'Accept': 'application/vnd.github.v3+json',
-      },
-    });
-    if (!repoResponse.ok) {
-      this.logger?.(`❌ Failed to fetch repo info: ${repoResponse.statusText}`);
-      throw new Error(`Failed to fetch repo info: ${repoResponse.statusText}`);
-    }
-    const repoData = await repoResponse.json() as { default_branch: string };
-    const branch = repoData.default_branch;
+  private async fetchRepoTree(ref?: string): Promise<{ tree: { path: string; type: string; size: number; url: string }[]; branch: string }> {
+    // First get the default branch if ref is not provided
+    let branch = ref;
 
-    // Get the recursive tree for the default branch
+    if (!branch) {
+      const repoResponse = await fetch(`${this.baseUrl}/repos/${this.owner}/${this.repo}`, {
+        headers: {
+          'Authorization': `token ${this.token}`,
+          'Accept': 'application/vnd.github.v3+json',
+        },
+      });
+      if (!repoResponse.ok) {
+        this.logger?.(`❌ Failed to fetch repo info: ${repoResponse.statusText}`);
+        throw new Error(`Failed to fetch repo info: ${repoResponse.statusText}`);
+      }
+      const repoData = await repoResponse.json() as { default_branch: string };
+      branch = repoData.default_branch;
+    }
+
+    // Get the recursive tree for the specified branch/ref
     const treeResponse = await fetch(
       `${this.baseUrl}/repos/${this.owner}/${this.repo}/git/trees/${branch}?recursive=1`,
       {

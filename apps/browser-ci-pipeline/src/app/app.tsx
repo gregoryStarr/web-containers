@@ -250,10 +250,23 @@ export function App() {
 
       const manager = managerRef.current;
 
+      // Clear filesystem before starting new run
+      await manager.cleanFileSystem();
+
       // Fetch and mount repository files (full codebase for CI)
-      addLog('🚀 Starting CI for repo: ' + owner + '/' + repo);
+      const prRef = pr.head.ref;
+      const prSha = pr.head.sha;
+      addLog(
+        `🚀 Starting CI for PR #${
+          pr.number
+        } (branch: ${prRef}, sha: ${prSha.substring(0, 7)})`
+      );
       addLog('📥 Fetching repository files...');
-      const containerFiles = await githubService.createContainerFilesFromRepo();
+
+      // Pass the PR SHA to fetch the exact commit
+      const containerFiles = await githubService.createContainerFilesFromRepo(
+        prSha
+      );
       addLog(
         '📁 Fetched ' +
           Object.keys(containerFiles).length +
@@ -270,9 +283,42 @@ export function App() {
         yarn: ['install', '--ignore-engines'],
         pnpm: ['install', '--no-frozen-lockfile'],
       };
-      const cwdOpt = settings.workingDirectory
-        ? { cwd: settings.workingDirectory }
-        : {};
+
+      // Auto-detect working directory if not set
+      let workingDir = settings.workingDirectory || '';
+
+      if (!workingDir) {
+        // Helper to find package.json in tree
+        const findPackageJsonDir = (
+          tree: Record<string, any>,
+          currentPath = ''
+        ): string | null => {
+          if (tree['package.json'] && tree['package.json'].file) {
+            return currentPath;
+          }
+          for (const key in tree) {
+            const item = tree[key];
+            if (item.directory) {
+              const found = findPackageJsonDir(
+                item.directory,
+                currentPath ? `${currentPath}/${key}` : key
+              );
+              if (found !== null) return found;
+            }
+          }
+          return null;
+        };
+
+        const detected = findPackageJsonDir(containerFiles);
+        if (detected) {
+          workingDir = detected;
+          addLog(`📦 Auto-detected project root: ${workingDir}`);
+        } else {
+          addLog('⚠️ Could not find package.json to auto-detect root.');
+        }
+      }
+
+      const cwdOpt = workingDir ? { cwd: workingDir } : {};
 
       const pipelineConfig: Record<
         string,

@@ -44,6 +44,25 @@ export class WebContainerManager {
     }
   }
 
+  async cleanFileSystem(): Promise<void> {
+    if (!this._container || !this.isBooted) {
+      throw new Error('Container is not booted');
+    }
+    this.logger?.('🧹 Clearing filesystem...');
+    try {
+      const files = await this._container.fs.readdir('/');
+      for (const file of files) {
+        if (file === '.' || file === '..') continue;
+        // Recursive delete
+        await this._container.fs.rm(file, { recursive: true });
+      }
+      this.logger?.('✅ Filesystem cleared');
+    } catch (error) {
+      this.logger?.(`⚠️ Failed to clear filesystem: ${error}`);
+      // Don't throw, just warn
+    }
+  }
+
   async installDependencies(command: string, args: string[] = []): Promise<CommandResult> {
     if (!this._container || !this.isBooted) {
       throw new Error('Container is not booted');

@@ -166,7 +166,15 @@ export class CIPipelineOrchestrator {
 
   private async executeStage(stage: PipelineStage): Promise<CommandResult> {
     if (stage.name === 'install') {
-      return await this.manager.installDependencies(stage.command, stage.args);
+      const result = await this.manager.installDependencies(stage.command, stage.args);
+      
+      if (result.success) {
+        this.logger?.('📦 Installing typescript explicitly to ensure tsc availability...');
+        // Bypass installDependencies check and force install typescript
+        await this.manager.executeCommand('npm', ['install', 'typescript', '--no-save']);
+      }
+      
+      return result;
     }
     return await this.manager.executeCommand(stage.command, stage.args || [], stage.cwd);
   }
