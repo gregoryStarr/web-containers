@@ -1,4 +1,5 @@
 import { WebContainerManager, CommandResult } from '@org/webcontainer-manager';
+import { GitHubIntegrationService } from '@org/github-integration';
 
 export interface PipelineStage {
   name: string;
@@ -15,115 +16,140 @@ export interface PipelineResult {
   aborted: boolean;
 }
 
-export interface PipelineConfig {
-  install?: PipelineStage;
-  build?: PipelineStage;
-  test?: PipelineStage;
-  mutation?: PipelineStage;
+export interface PipelineOptions {
+  installCommand?: string;
+  buildCommand?: string;
+  testCommand?: string;
+  cwd?: string;
+}
+
+export type LogCategory = 'COMMANDS' | 'FILESYSTEM' | 'NETWORK' | 'INTERNAL';
+
+export interface LoggingConfig {
+  verbose: boolean;
+  categories: LogCategory[];
 }
 
 export class CIPipelineOrchestrator {
+  private github: GitHubIntegrationService;
   private manager: WebContainerManager;
-  private config: PipelineConfig;
   private aborted = false;
-  private skipResolvers: Map<string, (result: CommandResult) => void> = new Map();
   private logger?: (message: string) => void;
+  private onStageChange?: (stage: string) => void;
+  private logConfig: LoggingConfig;
 
-  constructor(manager: WebContainerManager, config: PipelineConfig, logger?: (message: string) => void) {
+  constructor(
+    github: GitHubIntegrationService,
+    manager: WebContainerManager,
+    logger?: (message: string) => void,
+    onStageChange?: (stage: string) => void,
+    logConfig: LoggingConfig = { verbose: false, categories: [] }
+  ) {
+    this.github = github;
     this.manager = manager;
-    this.config = config;
     this.logger = logger;
+    this.onStageChange = onStageChange;
+    this.logConfig = logConfig;
   }
 
-  async runPipeline(): Promise<PipelineResult[]> {
+  private log(category: LogCategory, message: string) {
+    if (this.logConfig.verbose && this.logConfig.categories.includes(category)) {
+      this.logger?.(`[${category}] ${message}`);
+    }
+  }
+
+  async runPipeline(prNumber: number, options: PipelineOptions = {}): Promise<PipelineResult[]> {
     const results: PipelineResult[] = [];
     this.aborted = false;
 
-    const stages = [
-      { key: 'install', defaultCommand: 'npm', defaultArgs: ['install', '--no-audit', '--no-fund', '--ignore-scripts'] },
-      { key: 'build', defaultCommand: 'npm', defaultArgs: ['run', 'build'] },
-      { key: 'test', defaultCommand: 'npm', defaultArgs: ['test'] },
-      // { key: 'mutation', defaultCommand: 'npx', defaultArgs: ['stryker', 'run'] },
-    ];
+    try {
+      this.onStageChange?.('Initializing...');
+      this.logger?.(`🚀 Starting CI pipeline for PR #${prNumber}`);
+      this.log('INTERNAL', 'Initializing CI pipeline orchestrator...');
 
-    // Log pipeline steps
-    const stepNames = stages.map(s => {
-      switch(s.key) {
-        case 'install': return 'Install dependencies';
-        case 'build': return 'Build project';
-        case 'test': return 'Run tests';
-        // case 'mutation': return 'Run mutation tests';
-        default: return s.key;
-      }
-    });
-    this.logger?.(`🚀 Starting CI pipeline: ${stepNames.join(' → ')}`);
+      // 1. Fetch PR details to get the head ref
+      this.logger?.('🔍 Fetching PR details...');
+      this.log('NETWORK', `GET https://api.github.com/repos/.../pulls/${prNumber}`);
+      const prData = await this.github.fetchPR(prNumber);
+      const headRef = prData.head.ref;
+      this.logger?.(`✅ PR #${prNumber} is on branch "${headRef}"`);
+      this.log('INTERNAL', `PR head SHA: ${prData.head.sha}`);
 
-    for (const { key, defaultCommand, defaultArgs } of stages) {
-      if (this.aborted) {
-        results.push({
-          stage: key,
-          success: false,
-          result: {
+      // 2. Fetch repository files and mount them
+      this.onStageChange?.('Mounting files...');
+      this.logger?.('📥 Fetching repository files...');
+      this.log('NETWORK', `Fetching tree for ref: ${headRef}`);
+      const containerFiles = await this.github.createContainerFilesFromRepo(headRef);
+      
+      this.logger?.('🔧 Mounting files in WebContainer...');
+      this.log('FILESYSTEM', `Mounting ${Object.keys(containerFiles).length} top-level items to root`);
+      await this.manager.container?.mount(containerFiles);
+      this.logger?.('✅ Files mounted successfully');
+
+      // 3. Define stages
+      const stages = [
+        { 
+          key: 'install', 
+          name: 'Install dependencies',
+          command: options.installCommand || 'npm install',
+          timeout: 300000 
+        },
+        { 
+          key: 'build', 
+          name: 'Build project',
+          command: options.buildCommand || 'npm run build',
+          timeout: 600000 
+        },
+        { 
+          key: 'test', 
+          name: 'Run tests',
+          command: options.testCommand || 'npm test',
+          timeout: 900000 
+        },
+      ];
+
+      // 4. Run stages
+      for (const { key, name, command, timeout } of stages) {
+        if (this.aborted) {
+          results.push({
+            stage: key,
             success: false,
-            stdout: '',
-            stderr: 'Pipeline aborted',
-            exitCode: -1,
-            duration: 0,
-          },
-          aborted: true,
-        });
-        continue;
-      }
-
-      const stageConfig = this.config[key as keyof PipelineConfig];
-      let stage: PipelineStage = stageConfig || {
-        name: key,
-        command: defaultCommand,
-        args: defaultArgs,
-        timeout: key === 'install' ? 300000 : key === 'build' ? 600000 : key === 'test' ? 900000 : 1200000,
-      };
-
-
-
-      const stepName = key === 'install' ? 'Install dependencies' :
-                      key === 'build' ? 'Build project' :
-                      key === 'test' ? 'Run tests' : stage.name;
-      this.logger?.(`🔄 Starting: ${stepName}`);
-
-      // Log start of install
-      if (stage.name === 'install') {
-        this.logger?.(`📦 Installing dependencies...`);
-      }
-
-      try {
-        const timeoutDuration = stage.timeout || 300000;
-        const executePromise = this.executeStage(stage);
-        
-        const timeoutPromise = new Promise<CommandResult>((_, reject) => {
-          setTimeout(() => reject(new Error(`Stage ${stage.name} timed out after ${timeoutDuration}ms`)), timeoutDuration);
-        });
-
-        const manualSkipPromise = new Promise<CommandResult>((resolve) => {
-          this.skipResolvers.set(stage.name, resolve);
-        });
-
-        const result = await Promise.race([executePromise, timeoutPromise, manualSkipPromise]);
-        
-        // Cleanup resolver
-        this.skipResolvers.delete(stage.name);
-
-        this.logger?.(`✅ ${stage.name} completed in ${result.duration}ms (Exit code: ${result.exitCode})`);
-
-        if (result.stdout) {
-          this.logger?.(`${stage.name} stdout: ${result.stdout.substring(0, 500)}${result.stdout.length > 500 ? '...' : ''}`);
+            result: {
+              success: false,
+              stdout: '',
+              stderr: 'Pipeline aborted',
+              exitCode: -1,
+              duration: 0,
+            },
+            aborted: true,
+          });
+          continue;
         }
+
+        this.onStageChange?.(name);
+        this.logger?.(`\n🔄 Starting Stage: ${name}`);
+        this.log('COMMANDS', `Preparing to run: ${command}`);
+        
+        if (key === 'install') {
+          this.log('INTERNAL', 'Checking for lockfiles and pre-install hooks...');
+        } else if (key === 'build') {
+          this.log('INTERNAL', 'Scanning for build scripts in package.json...');
+        }
+
+        const result = await this.executeCommandWithTimeout(command, options.cwd, timeout);
+        
+        this.log('COMMANDS', `Stage "${name}" finished with exit code ${result.exitCode} (${result.duration}ms)`);
+        
+        if (result.stdout && this.logConfig.verbose) {
+          this.log('INTERNAL', `Output snippet: ${result.stdout.substring(0, 200)}...`);
+        }
+
         if (result.stderr) {
-          this.logger?.(`${stage.name} stderr: ${result.stderr.substring(0, 500)}${result.stderr.length > 500 ? '...' : ''}`);
+          this.logger?.(`⚠️ [WARNING] ${name} produced stderr output:`);
+          this.logger?.(result.stderr);
+          this.log('INTERNAL', `Full stderr captured (${result.stderr.length} bytes)`);
         }
 
-
-
-        this.logger?.(`${stage.name} result: ${result}`);
         results.push({
           stage: key,
           success: result.success,
@@ -131,52 +157,43 @@ export class CIPipelineOrchestrator {
           aborted: false,
         });
 
-        // Abort on failure unless it's mutation test (optional)
-        this.logger?.(`result.success ${result.success}`);
-        if (!result.success && key !== 'mutation') {
-          this.logger?.(`❌ Failed: ${stage.name}, aborting pipeline`);
+        if (result.success) {
+          this.logger?.(`✅ [SUCCESS] Stage "${name}" completed successfully.`);
+        } else {
+          this.logger?.(`❌ [FAILURE] Stage "${name}" failed with exit code ${result.exitCode}.`);
           this.aborted = true;
-        } else if (result.success) {
-          const stepName = key === 'install' ? 'Install dependencies' :
-                          key === 'build' ? 'Build project' :
-                          key === 'test' ? 'Run tests' : stage.name;
-          this.logger?.(`✅ Completed: ${stepName}`);
         }
-      } catch (error) {
-        throw error;
       }
+
+    } catch (error: any) {
+      this.logger?.(`🚨 [CRITICAL ERROR] Pipeline execution halted: ${error.message}`);
+      throw error;
+    } finally {
+      this.onStageChange?.('');
     }
 
     return results;
   }
 
-  confirmCurrentStage(stageName: string) {
-    const resolve = this.skipResolvers.get(stageName);
-    if (resolve) {
-      resolve({
-        success: true,
-        stdout: 'Manually skipped/confirmed by user',
-        stderr: '',
-        exitCode: 0,
-        duration: 0
-      });
-      this.logger?.(`⏩ Manually confirming stage: ${stageName}`);
-    }
+  private async executeCommandWithTimeout(
+    fullCommand: string,
+    cwd?: string,
+    timeoutDuration: number = 300000
+  ): Promise<CommandResult> {
+    const [command, ...args] = fullCommand.split(' ');
+    
+    const executePromise = this.manager.executeCommand(command, args, cwd);
+    
+    const timeoutPromise = new Promise<CommandResult>((_, reject) => {
+      setTimeout(() => reject(new Error(`Command "${fullCommand}" timed out after ${timeoutDuration}ms`)), timeoutDuration);
+    });
+
+    return await Promise.race([executePromise, timeoutPromise]) as CommandResult;
   }
 
-  private async executeStage(stage: PipelineStage): Promise<CommandResult> {
-    if (stage.name === 'install') {
-      const result = await this.manager.installDependencies(stage.command, stage.args);
-      
-      if (result.success) {
-        this.logger?.('📦 Installing typescript explicitly to ensure tsc availability...');
-        // Bypass installDependencies check and force install typescript
-        await this.manager.executeCommand('npm', ['install', 'typescript', '--no-save']);
-      }
-      
-      return result;
-    }
-    return await this.manager.executeCommand(stage.command, stage.args || [], stage.cwd);
+  forceNextStage() {
+    // This was used in a previous version, keeping if needed but currently runPipeline is sequential
+    this.logger?.('⏩ Manual skip requested (not implemented in current sequential runner)');
   }
 
   abort(): void {

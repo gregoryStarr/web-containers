@@ -41,6 +41,7 @@ export class GitHubIntegrationService {
 
   async fetchPR(prNumber: number): Promise<PRData> {
     const url = `${this.baseUrl}/repos/${this.owner}/${this.repo}/pulls/${prNumber}`;
+    this.logger?.(`Fetching PR #${prNumber} from ${url}`);
     const response = await fetch(url, {
       headers: {
         'Authorization': `token ${this.token}`,
@@ -88,8 +89,8 @@ export class GitHubIntegrationService {
     return await response.json() as any[];
   }
 
-  // For webhook simulation - poll for new PRs
-  async pollPRs(since?: Date): Promise<PRData[]> {
+  // Fetch pull requests for the repository
+  async fetchPullRequests(since?: Date): Promise<PRData[]> {
     const url = `${this.baseUrl}/repos/${this.owner}/${this.repo}/pulls`;
     const params = new URLSearchParams();
     if (since) {
@@ -132,45 +133,71 @@ export class GitHubIntegrationService {
     return await response.json() as { login: string }[];
   }
 
-  async fetchRepos(owner: string, type: 'user' | 'org' = 'user'): Promise<{ name: string }[]> {
-    // If fetching for the authenticated user (and type is user), use /user/repos to see private repos too
-    // Otherwise use /users/:username/repos or /orgs/:org/repos
-    let url = '';
-    if (type === 'org') {
-      url = `${this.baseUrl}/orgs/${owner}/repos?per_page=100&sort=updated`;
-    } else {
-      // For a specific user (public)
-      url = `${this.baseUrl}/users/${owner}/repos?per_page=100&sort=updated`;
-    }
-    
-    // Optimisation: if owner matches authenticated user, we could use /user/repos, 
-    // but the UI typically selects "Owner" which might be self. 
-    // Let's try to handle the "self" case if we can, but simpler to use the public endpoints first.
-    // Actually, /user/repos lists all repos the user has access to (owned + collab + org).
-    // Better to stick to specific owner listings to filter correctly.
+  async fetchRepos(owner: string): Promise<{ name: string }[]> {
+    let allRepos: { name: string }[] = [];
+    let page = 1;
+    const perPage = 100;
 
-    const response = await fetch(url, {
-      headers: {
-        Authorization: `token ${this.token}`,
-        Accept: 'application/vnd.github.v3+json',
-      },
-    });
-    
-    if (!response.ok) {
-        // Fallback: maybe it's the authenticated user? try /user/repos?affiliation=owner
-         const selfResponse = await fetch(`${this.baseUrl}/user/repos?per_page=100&sort=updated&affiliation=owner`, {
-            headers: {
-                Authorization: `token ${this.token}`,
-                Accept: 'application/vnd.github.v3+json',
-            },
-         });
-         if (selfResponse.ok) {
-             const repos = await selfResponse.json() as { name: string; owner: { login: string } }[];
-             return repos.filter(r => r.owner.login === owner);
-         }
-         throw new Error(`Failed to fetch repos for ${owner}: ${response.statusText}`);
+    // Check if the owner is the authenticated user
+    let isSelf = false;
+    try {
+      const user = await this.fetchUser();
+      if (user.login === owner) {
+        isSelf = true;
+      }
+    } catch (err) {
+      console.error('Failed to fetch user in fetchRepos:', err);
     }
-    return await response.json() as { name: string }[];
+
+    while (true) {
+      let url = '';
+      if (isSelf) {
+        url = `${this.baseUrl}/user/repos?per_page=${perPage}&page=${page}&sort=updated&affiliation=owner,collaborator`;
+      } else {
+        // We don't know for sure if it's an org or another user, so we try org first as it's common in CI
+        url = `${this.baseUrl}/orgs/${owner}/repos?per_page=${perPage}&page=${page}&sort=updated`;
+      }
+
+      const response = await fetch(url, {
+        headers: {
+          Authorization: `token ${this.token}`,
+          Accept: 'application/vnd.github.v3+json',
+        },
+      });
+
+      if (!response.ok) {
+        if (!isSelf && response.status === 404) {
+          // If org failed, try user
+          url = `${this.baseUrl}/users/${owner}/repos?per_page=${perPage}&page=${page}&sort=updated`;
+          const userResponse = await fetch(url, {
+            headers: {
+              Authorization: `token ${this.token}`,
+              Accept: 'application/vnd.github.v3+json',
+            },
+          });
+          if (!userResponse.ok) {
+            throw new Error(`Failed to fetch repos for ${owner}: ${userResponse.statusText}`);
+          }
+          const repos = await userResponse.json() as { name: string }[];
+          allRepos = allRepos.concat(repos);
+          if (repos.length < perPage) break;
+          page++;
+          continue;
+        }
+        throw new Error(`Failed to fetch repos for ${owner}: ${response.statusText}`);
+      }
+
+      const repos = await response.json() as { name: string; owner?: { login: string } }[];
+      
+      // If we used /user/repos, we need to filter by the specified owner
+      const filtered = isSelf ? repos.filter(r => r.owner?.login === owner) : repos;
+      
+      allRepos = allRepos.concat(filtered);
+      if (repos.length < perPage) break;
+      page++;
+    }
+
+    return allRepos;
   }
 
   // Helper to create WebContainer files from repository using recursive tree API
@@ -300,29 +327,29 @@ export class GitHubIntegrationService {
     return root;
   }
 
+  private async getDefaultBranch(): Promise<string> {
+    this.logger?.(`Fetching default branch for ${this.owner}/${this.repo}`);
+    const repoResponse = await fetch(`${this.baseUrl}/repos/${this.owner}/${this.repo}`, {
+      headers: {
+        'Authorization': `token ${this.token}`,
+        'Accept': 'application/vnd.github.v3+json',
+      },
+    });
+    if (!repoResponse.ok) {
+      this.logger?.(`❌ Failed to fetch repo info: ${repoResponse.statusText}`);
+      throw new Error(`Failed to fetch repo info: ${repoResponse.statusText}`);
+    }
+    const repoData = await repoResponse.json() as { default_branch: string };
+    this.logger?.(`Default branch is: ${repoData.default_branch}`);
+    return repoData.default_branch;
+  }
+
   // Fetch the full recursive tree using the Git Trees API (single request)
   private async fetchRepoTree(ref?: string): Promise<{ tree: { path: string; type: string; size: number; url: string }[]; branch: string }> {
-    // First get the default branch if ref is not provided
-    let branch = ref;
-
-    if (!branch) {
-      const repoResponse = await fetch(`${this.baseUrl}/repos/${this.owner}/${this.repo}`, {
-        headers: {
-          'Authorization': `token ${this.token}`,
-          'Accept': 'application/vnd.github.v3+json',
-        },
-      });
-      if (!repoResponse.ok) {
-        this.logger?.(`❌ Failed to fetch repo info: ${repoResponse.statusText}`);
-        throw new Error(`Failed to fetch repo info: ${repoResponse.statusText}`);
-      }
-      const repoData = await repoResponse.json() as { default_branch: string };
-      branch = repoData.default_branch;
-    }
-
-    // Get the recursive tree for the specified branch/ref
-    const treeResponse = await fetch(
-      `${this.baseUrl}/repos/${this.owner}/${this.repo}/git/trees/${branch}?recursive=1`,
+    const branch = ref || (await this.getDefaultBranch());
+    this.logger?.(`Fetching repository tree for ref: ${branch}`);
+    const url = `${this.baseUrl}/repos/${this.owner}/${this.repo}/git/trees/${branch}?recursive=1`;
+    const treeResponse = await fetch(url,
       {
         headers: {
           'Authorization': `token ${this.token}`,
@@ -342,5 +369,46 @@ export class GitHubIntegrationService {
     }
 
     return { tree: treeData.tree, branch };
+  }
+
+  async mergePR(prNumber: number, commitHeadline?: string): Promise<void> {
+    const url = `${this.baseUrl}/repos/${this.owner}/${this.repo}/pulls/${prNumber}/merge`;
+    const response = await fetch(url, {
+      method: 'PUT',
+      headers: {
+        'Authorization': `token ${this.token}`,
+        'Accept': 'application/vnd.github.v3+json',
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        commit_title: commitHeadline,
+        merge_method: 'merge', // can be 'squash' or 'rebase' too
+      }),
+    });
+
+    if (!response.ok) {
+      const errorData = (await response.json().catch(() => ({ message: response.statusText }))) as any;
+      throw new Error(`Failed to merge PR: ${errorData.message || response.statusText}`);
+    }
+    
+    this.logger?.(`✅ PR #${prNumber} merged successfully`);
+  }
+
+  async deleteBranch(branchName: string): Promise<void> {
+    const url = `${this.baseUrl}/repos/${this.owner}/${this.repo}/git/refs/heads/${branchName}`;
+    const response = await fetch(url, {
+      method: 'DELETE',
+      headers: {
+        'Authorization': `token ${this.token}`,
+        'Accept': 'application/vnd.github.v3+json',
+      },
+    });
+
+    if (!response.ok) {
+      const errorData = (await response.json().catch(() => ({ message: response.statusText }))) as any;
+      throw new Error(`Failed to delete branch ${branchName}: ${errorData.message || response.statusText}`);
+    }
+    
+    this.logger?.(`🗑️ Branch ${branchName} deleted successfully`);
   }
 }

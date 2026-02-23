@@ -1,6 +1,7 @@
 /// <reference types='vitest' />
 import { defineConfig } from 'vite';
 import react from '@vitejs/plugin-react';
+import path from 'path';
 
 export default defineConfig(() => ({
   root: import.meta.dirname,
@@ -28,15 +29,11 @@ export default defineConfig(() => ({
   plugins: [react()],
   resolve: {
     alias: {
-      '@org/github-integration': '../../../libs/shared/github-integration/src/index.ts',
-      '@org/webcontainer-manager': '../../../libs/shared/webcontainer-manager/src/index.ts',
-      '@org/ci-pipeline': '../../../libs/shared/ci-pipeline/src/index.ts',
+      '@org/github-integration': path.resolve(import.meta.dirname, '../../libs/shared/github-integration/src/index.ts'),
+      '@org/webcontainer-manager': path.resolve(import.meta.dirname, '../../libs/shared/webcontainer-manager/src/index.ts'),
+      '@org/ci-pipeline': path.resolve(import.meta.dirname, '../../libs/shared/ci-pipeline/src/index.ts'),
     },
   },
-  // Uncomment this if you are using workers.
-  // worker: {
-  //  plugins: [],
-  // },
   build: {
     outDir: './dist',
     emptyOutDir: true,

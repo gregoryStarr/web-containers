@@ -14,12 +14,12 @@
     "rootDir": "src",
     "paths": {
       "@org/github-integration": [
-        "../../../libs/shared/github-integration/src/index.ts"
+        "../../libs/shared/github-integration/src/index.ts"
       ],
       "@org/webcontainer-manager": [
-        "../../../libs/shared/webcontainer-manager/src/index.ts"
+        "../../libs/shared/webcontainer-manager/src/index.ts"
       ],
-      "@org/ci-pipeline": ["../../../libs/shared/ci-pipeline/src/index.ts"]
+      "@org/ci-pipeline": ["../../libs/shared/ci-pipeline/src/index.ts"]
     }
   },
   "exclude": [

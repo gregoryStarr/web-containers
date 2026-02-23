@@ -1,128 +1,196 @@
+import { useState } from 'react';
+import {
+  Play,
+  SkipForward,
+  GitMerge,
+  Rocket,
+  CheckCircle2,
+  XCircle,
+  Info,
+  ChevronRight,
+  Trash2,
+  RefreshCw,
+} from 'lucide-react';
 import { PR } from '../app';
 
 interface PRDetailProps {
   pr: PR;
   onRunCI: (pr: PR) => Promise<void>;
   onSkip?: () => void;
+  onMerge?: (pr: PR, deleteBranch: boolean) => Promise<void>;
+  onMergeAndDeploy?: (pr: PR, deleteBranch: boolean) => Promise<void>;
   isRunning: boolean;
-  logs: string[];
-  currentStage?: string;
+  isMerging: boolean;
 }
 
 export function PRDetail({
   pr,
   onRunCI,
   onSkip,
+  onMerge,
+  onMergeAndDeploy,
   isRunning,
-  logs,
-  currentStage,
+  isMerging: parentIsMerging,
 }: PRDetailProps) {
+  const [deleteBranchAfterMerge, setDeleteBranchAfterMerge] = useState(true);
+  const [localIsMerging, setLocalIsMerging] = useState(false);
+
+  const isMerging = parentIsMerging || localIsMerging;
+
+  const handleMerge = async () => {
+    if (!onMerge) return;
+    setLocalIsMerging(true);
+    try {
+      await onMerge(pr, deleteBranchAfterMerge);
+    } finally {
+      setLocalIsMerging(false);
+    }
+  };
+
+  const handleMergeAndDeploy = async () => {
+    if (!onMergeAndDeploy) return;
+    setLocalIsMerging(true);
+    try {
+      await onMergeAndDeploy(pr, deleteBranchAfterMerge);
+    } finally {
+      setLocalIsMerging(false);
+    }
+  };
+
   return (
-    <div className="space-y-6">
-      <div className="bg-white rounded-lg shadow">
-        <div className="p-6">
-          <div className="flex flex-col space-y-4 sm:flex-row sm:items-start sm:justify-between sm:space-y-0">
+    <div className="space-y-6 animate-in fade-in slide-in-from-bottom-2 duration-400">
+      <div className="bg-white rounded-earth shadow-sm border border-[var(--color-earth-border)] overflow-hidden">
+        <div className="p-8">
+          <div className="flex flex-col space-y-6">
             <div>
-              <h2 className="text-xl font-semibold text-gray-900">
-                #{pr.number} {pr.title}
+              <div className="flex items-center space-x-3 text-[var(--color-earth-muted)] mb-3">
+                <span className="text-sm font-bold bg-stone-100 px-2 py-1 rounded">
+                  #{pr.number}
+                </span>
+                <ChevronRight size={14} />
+                <span className="text-sm font-medium truncate max-w-md">
+                  {pr.head?.ref || 'unknown'}
+                </span>
+              </div>
+              <h2 className="text-2xl font-bold text-[var(--color-earth-text)] tracking-tight mb-4">
+                {pr.title}
               </h2>
-              <div className="mt-2 flex items-center">
+
+              <div className="flex flex-wrap items-center gap-4">
                 <span
-                  className={`inline-flex items-center px-3 py-1 rounded-full text-sm font-medium ${
+                  className={`inline-flex items-center space-x-1.5 px-3 py-1.5 rounded-full text-sm font-bold uppercase tracking-wider ${
                     pr.status === 'success'
-                      ? 'bg-green-100 text-green-800'
+                      ? 'bg-emerald-100/80 text-emerald-900'
                       : pr.status === 'failure'
-                      ? 'bg-red-100 text-red-800'
+                      ? 'bg-red-100/80 text-red-900'
                       : pr.status === 'running'
-                      ? 'bg-yellow-100 text-yellow-800'
-                      : 'bg-gray-100 text-gray-800'
+                      ? 'bg-amber-100/80 text-amber-900'
+                      : 'bg-stone-100 text-stone-600'
                   }`}
                 >
-                  {pr.status}
+                  {pr.status === 'success' && <CheckCircle2 size={16} />}
+                  {pr.status === 'failure' && <XCircle size={16} />}
+                  {pr.status === 'running' && (
+                    <div className="animate-spin rounded-full h-4 w-4 border-2 border-[var(--color-earth-primary)] border-t-transparent"></div>
+                  )}
+                  <span>{pr.status}</span>
                 </span>
+
                 {pr.lastRun && (
-                  <span className="ml-4 text-sm text-gray-500">
+                  <span className="flex items-center text-sm text-[var(--color-earth-muted)] font-medium">
+                    <Info size={16} className="mr-1.5" />
                     Last run: {pr.lastRun.toLocaleString()}
                   </span>
                 )}
               </div>
+            </div>
 
-              <div className="mt-4 flex space-x-3">
-                {isRunning && onSkip && (
-                  <button
-                    onClick={onSkip}
-                    className="bg-yellow-500 hover:bg-yellow-600 text-white px-4 py-2 rounded-md text-sm font-medium"
-                    title="Force the current stage to complete successfully"
-                  >
-                    Force Next Stage
-                  </button>
+            <div className="pt-6 border-t border-[var(--color-earth-border)] flex flex-wrap items-center gap-4">
+              <button
+                onClick={() => onRunCI(pr)}
+                disabled={isRunning || isMerging}
+                className="flex items-center space-x-2 bg-[var(--color-earth-primary)] hover:bg-[var(--color-earth-primary)]/90 disabled:opacity-50 text-white px-6 py-2.5 rounded-lg text-sm font-bold transition-earth shadow-sm"
+              >
+                {isRunning ? (
+                  <RefreshCw className="animate-spin" size={18} />
+                ) : (
+                  <Play size={18} />
                 )}
+                <span>{isRunning ? 'Running...' : 'Run CI Pipeline'}</span>
+              </button>
+
+              {isRunning && onSkip && (
                 <button
-                  onClick={() => onRunCI(pr)}
-                  disabled={isRunning}
-                  className="bg-blue-600 hover:bg-blue-700 disabled:bg-gray-400 text-white px-4 py-2 rounded-md text-sm font-medium flex items-center space-x-2"
+                  onClick={onSkip}
+                  className="flex items-center space-x-2 bg-amber-50 text-amber-900 hover:bg-amber-100 px-6 py-2.5 rounded-lg text-sm font-bold transition-earth border border-amber-200"
+                  title="Force the current stage to complete successfully"
                 >
-                  {isRunning && (
-                    <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white"></div>
-                  )}
-                  <span>{isRunning ? 'Running CI...' : 'Run CI'}</span>
+                  <SkipForward size={18} />
+                  <span>Force Next Stage</span>
                 </button>
-              </div>
+              )}
+
+              {pr.status === 'success' && !isRunning && (
+                <div className="flex flex-wrap items-center gap-4">
+                  <div className="h-8 w-px bg-[var(--color-earth-border)] hidden md:block mx-1" />
+                  <div className="flex items-center gap-3">
+                    <button
+                      onClick={handleMerge}
+                      disabled={isMerging}
+                      className="flex items-center space-x-2 bg-stone-800 hover:bg-black text-white px-6 py-2.5 rounded-lg text-sm font-bold transition-earth shadow-sm"
+                    >
+                      <GitMerge size={18} />
+                      <span>Merge</span>
+                    </button>
+                    <button
+                      onClick={handleMergeAndDeploy}
+                      disabled={isMerging}
+                      className="flex items-center space-x-2 bg-[var(--color-earth-primary)] hover:brightness-110 text-white px-6 py-2.5 rounded-lg text-sm font-bold transition-earth shadow-sm"
+                    >
+                      <Rocket size={18} />
+                      <span>Merge & Deploy</span>
+                    </button>
+                  </div>
+                  <label className="flex items-center space-x-2 cursor-pointer group">
+                    <div className="relative flex items-center">
+                      <input
+                        type="checkbox"
+                        checked={deleteBranchAfterMerge}
+                        onChange={(e) =>
+                          setDeleteBranchAfterMerge(e.target.checked)
+                        }
+                        className="peer h-5 w-5 cursor-pointer appearance-none rounded border border-stone-300 transition-all checked:bg-[var(--color-earth-primary)] checked:border-[var(--color-earth-primary)]"
+                      />
+                      <CheckCircle2
+                        size={12}
+                        className="absolute left-1 shadow-sm opacity-0 peer-checked:opacity-100 text-white transition-opacity"
+                      />
+                    </div>
+                    <span className="text-sm font-bold text-[var(--color-earth-muted)] group-hover:text-[var(--color-earth-text)] transition-earth flex items-center space-x-1">
+                      <Trash2 size={14} />
+                      <span>Delete branch</span>
+                    </span>
+                  </label>
+                </div>
+              )}
             </div>
           </div>
         </div>
       </div>
 
-      {pr.status === 'failure' && pr.failureReason && (
-        <div className="bg-red-50 border-l-4 border-red-400 p-4 mb-6">
-          <div className="flex">
-            <div className="flex-shrink-0">
-              <svg
-                className="h-5 w-5 text-red-400"
-                xmlns="http://www.w3.org/2000/svg"
-                viewBox="0 0 20 20"
-                fill="currentColor"
-                aria-hidden="true"
-              >
-                <path
-                  fillRule="evenodd"
-                  d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z"
-                  clipRule="evenodd"
-                />
-              </svg>
-            </div>
-            <div className="ml-3">
-              <h3 className="text-sm font-medium text-red-800">Build Failed</h3>
-              <div className="mt-2 text-sm text-red-700">
-                <p>{pr.failureReason}</p>
-              </div>
-            </div>
+      {pr.failureReason && (
+        <div className="bg-red-50 border border-red-200 rounded-earth p-6 flex items-start space-x-4 animate-in slide-in-from-top-2">
+          <div className="p-2 bg-red-100/50 rounded-lg">
+            <XCircle className="text-red-700" size={24} />
+          </div>
+          <div>
+            <h3 className="text-red-900 font-bold mb-1">Pipeline Failed</h3>
+            <p className="text-red-700 text-sm leading-relaxed">
+              {pr.failureReason}
+            </p>
           </div>
         </div>
       )}
-
-      <div className="bg-white rounded-lg shadow">
-        <div className="p-4 border-b">
-          <div className="flex items-center justify-between">
-            <h3 className="text-lg font-medium text-gray-900">CI Logs</h3>
-            {isRunning && currentStage && (
-              <div className="flex items-center space-x-2">
-                <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-blue-600"></div>
-                <span className="text-sm text-blue-600 font-medium">
-                  {currentStage}
-                </span>
-              </div>
-            )}
-          </div>
-        </div>
-        <div className="p-4 max-h-96 overflow-y-auto">
-          <pre className="text-sm text-gray-700 whitespace-pre-wrap font-mono">
-            {logs.length > 0
-              ? logs.join('\n')
-              : 'No logs yet. Run CI to see output.'}
-          </pre>
-        </div>
-      </div>
     </div>
   );
 }

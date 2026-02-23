@@ -1,6 +1,12 @@
 import { useEffect, useRef, useState } from 'react';
 import { Terminal } from '@xterm/xterm';
 import { FitAddon } from '@xterm/addon-fit';
+import {
+  Terminal as TerminalIcon,
+  ChevronUp,
+  ChevronDown,
+  Monitor,
+} from 'lucide-react';
 import '@xterm/xterm/css/xterm.css';
 import type { WebContainer } from '@webcontainer/api';
 
@@ -13,7 +19,7 @@ export function WebContainerTerminal({ container }: WebContainerTerminalProps) {
   const xtermRef = useRef<Terminal | null>(null);
   const fitAddonRef = useRef<FitAddon | null>(null);
   const shellWriterRef = useRef<WritableStreamDefaultWriter | null>(null);
-  const [isCollapsed, setIsCollapsed] = useState(false);
+  const [isCollapsed, setIsCollapsed] = useState(true);
   const [isReady, setIsReady] = useState(false);
 
   useEffect(() => {
@@ -24,18 +30,18 @@ export function WebContainerTerminal({ container }: WebContainerTerminalProps) {
       fontSize: 13,
       fontFamily: "'JetBrains Mono', 'Fira Code', 'Cascadia Code', monospace",
       theme: {
-        background: '#1e1e2e',
-        foreground: '#cdd6f4',
-        cursor: '#f5e0dc',
-        selectionBackground: '#585b7066',
-        black: '#45475a',
-        red: '#f38ba8',
-        green: '#a6e3a1',
-        yellow: '#f9e2af',
-        blue: '#89b4fa',
-        magenta: '#f5c2e7',
-        cyan: '#94e2d5',
-        white: '#bac2de',
+        background: '#022c22', // emerald-950
+        foreground: '#ecfdf5', // emerald-50
+        cursor: '#10b981', // emerald-500
+        selectionBackground: 'rgba(16, 185, 129, 0.3)',
+        black: '#064e3b',
+        red: '#ef4444',
+        green: '#10b981',
+        yellow: '#f59e0b',
+        blue: '#3b82f6',
+        magenta: '#d946ef',
+        cyan: '#06b6d4',
+        white: '#ecfdf5',
       },
     });
 
@@ -108,42 +114,79 @@ export function WebContainerTerminal({ container }: WebContainerTerminalProps) {
   }, [isCollapsed]);
 
   return (
-    <div className="fixed bottom-0 left-0 right-0 z-40 bg-[#1e1e2e] border-t border-gray-700 shadow-2xl">
+    <div className="fixed bottom-0 left-0 right-0 z-40 bg-[var(--color-forest-dark)] border-t border-stone-800 shadow-2xl transition-earth">
       {/* Terminal header bar */}
       <div
-        className="flex items-center justify-between px-4 py-1.5 bg-[#181825] cursor-pointer select-none"
+        className="flex items-center justify-between px-6 py-2 bg-stone-900 cursor-pointer select-none group"
         onClick={() => setIsCollapsed(!isCollapsed)}
       >
-        <div className="flex items-center space-x-2">
-          <span className="text-sm">⬛</span>
-          <span className="text-sm font-medium text-gray-300">
-            WebContainer Terminal
-          </span>
-          {isReady && (
-            <span className="text-xs text-green-400 bg-green-900/30 px-2 py-0.5 rounded-full">
-              Connected
+        <div className="flex items-center space-x-4">
+          <div className="flex items-center space-x-2 text-emerald-500">
+            <TerminalIcon size={16} />
+            <span className="text-xs font-bold uppercase tracking-widest">
+              Live Terminal
             </span>
-          )}
-          {!isReady && container && (
-            <span className="text-xs text-yellow-400 bg-yellow-900/30 px-2 py-0.5 rounded-full">
-              Connecting...
-            </span>
-          )}
+          </div>
+          {isReady ? (
+            <div className="flex items-center space-x-1.5 text-emerald-400 bg-emerald-900/30 px-3 py-1 rounded-full border border-emerald-800/50">
+              <div className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
+              <span className="text-[10px] font-bold uppercase tracking-tighter">
+                Connected
+              </span>
+            </div>
+          ) : container ? (
+            <div className="flex items-center space-x-1.5 text-amber-400 bg-amber-900/30 px-3 py-1 rounded-full border border-amber-800/50">
+              <RefreshCwIcon size={10} className="animate-spin" />
+              <span className="text-[10px] font-bold uppercase tracking-tighter">
+                Initializing...
+              </span>
+            </div>
+          ) : null}
         </div>
-        <button className="text-gray-400 hover:text-white text-sm transition-colors">
-          {isCollapsed ? '▲ Expand' : '▼ Collapse'}
-        </button>
+        <div className="flex items-center space-x-2 text-stone-500 group-hover:text-stone-300 transition-earth">
+          <span className="text-[10px] font-bold uppercase tracking-widest">
+            {isCollapsed ? 'Expand' : 'Collapse'}
+          </span>
+          {isCollapsed ? <ChevronUp size={16} /> : <ChevronDown size={16} />}
+        </div>
       </div>
 
       {/* Terminal body */}
       <div
         ref={terminalRef}
-        className="transition-all duration-200 overflow-hidden"
+        className="transition-all duration-300 ease-in-out overflow-hidden"
         style={{
-          height: isCollapsed ? 0 : '280px',
-          padding: isCollapsed ? 0 : '8px',
+          height: isCollapsed ? 0 : '320px',
+          padding: isCollapsed ? 0 : '12px 24px 24px 24px',
         }}
       />
     </div>
+  );
+}
+
+function RefreshCwIcon({
+  size,
+  className,
+}: {
+  size: number;
+  className?: string;
+}) {
+  return (
+    <svg
+      width={size}
+      height={size}
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="3"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      className={className}
+    >
+      <path d="M21 12a9 9 0 0 0-9-9 9.75 9.75 0 0 0-6.74 2.74L3 8" />
+      <path d="M3 3v5h5" />
+      <path d="M3 12a9 9 0 0 0 9 9 9.75 9.75 0 0 0 6.74-2.74L21 16" />
+      <path d="M16 21h5v-5" />
+    </svg>
   );
 }
