@@ -114,7 +114,7 @@ export function WebContainerTerminal({ container }: WebContainerTerminalProps) {
   }, [isCollapsed]);
 
   return (
-    <div className="fixed bottom-0 left-0 right-0 z-40 bg-[var(--color-forest-dark)] border-t border-stone-800 shadow-2xl transition-earth">
+    <div className="bg-[var(--color-forest-dark)] border-t border-orange-900 shadow-2xl transition-earth">
       {/* Terminal header bar */}
       <div
         className="flex items-center justify-between px-6 py-2 bg-stone-900 cursor-pointer select-none group"
