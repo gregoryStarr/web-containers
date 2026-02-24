@@ -502,7 +502,6 @@ export default function App() {
               </div>
             </section>
             {/* PR Detail (Top) */}
-            selectedpr: {selectedPR ? 'true' : 'false'}
             {selectedPR ? (
               <section>
                 <PRDetail
@@ -516,7 +515,9 @@ export default function App() {
                 />
               </section>
             ) : (
-              <>Continiue</>
+              <span class="inline-flex items-center space-x-2 px-3 py-1 rounded-full text-[10px] font-black uppercase tracking-[0.1em] shadow-sm transition-all duration-200 bg-amber-500 text-stone-400">
+                <span>Select a PR to continue</span>
+              </span>
             )}
             {/* PR List (Bottom) */}
             <section className="pt-3 border-t border-[var(--color-earth-border)]/30">

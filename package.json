@@ -2,7 +2,14 @@
   "name": "@org/source",
   "version": "0.0.0",
   "license": "MIT",
-  "scripts": {},
+  "scripts": {
+    "build":"nx run -t build browser-ci-pipeline",
+    "build:no-nx":"vite build --config apps/browser-ci-pipeline/vite.config.ts",
+    "dev":"nx run -t dev browser-ci-pipeline",
+    "dev:no-nx":"vite --config apps/browser-ci-pipeline/vite.config.ts",
+    "test":"nx run -t test browser-ci-pipeline",
+    "test:no-nx":"vitest --config apps/browser-ci-pipeline/vitest.config.ts"
+  },
   "private": true,
   "dependencies": {
     "@xterm/addon-fit": "^0.11.0",
