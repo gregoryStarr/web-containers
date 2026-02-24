@@ -1,3 +1,10 @@
+/**
+ * Services Initialization Hook
+ *
+ * Copyright (c) 2024 Gregory Starr
+ * @license BSL-1.1
+ */
+
 import { useState, useEffect } from 'react';
 import { GitHubIntegrationService } from '@org/github-integration';
 import { WebContainerManager } from '@org/webcontainer-manager';

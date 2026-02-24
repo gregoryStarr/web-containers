@@ -1,298 +1,308 @@
-# Nx React Repository
+<div align="center">
+  <img src="https://img.shields.io/badge/StackBlitz-WebContainers-blue?style=for-the-badge&logo=stackblitz" alt="Powered by StackBlitz WebContainers" />
+  <img src="https://img.shields.io/badge/License-BSL--1.1-orange?style=for-the-badge" alt="License BSL-1.1" />
+  <img src="https://img.shields.io/badge/TypeScript-5.x-blue?style=for-the-badge&logo=typescript" alt="TypeScript" />
+  <img src="https://img.shields.io/badge/React-19-blue?style=for-the-badge&logo=react" alt="React 19" />
+  
+  # Browser CI Pipeline
+  
+  **Run your CI/CD pipelines entirely in the browser using StackBlitz WebContainers.**
+  
+  No servers. No infrastructure. No costs. Just pure browser-based continuous integration.
 
-<a alt="Nx logo" href="https://nx.dev" target="_blank" rel="noreferrer"><img src="https://raw.githubusercontent.com/nrwl/nx/master/images/nx-logo.png" width="45"></a>
+[Live Demo](https://webcontainers.fly.dev) · [Documentation](apps/browser-ci-pipeline/ARCHITECTURE.md) · [Report Bug](https://github.com/gregoryStarr/web-containers/issues)
 
-✨ A repository showcasing key [Nx](https://nx.dev) features for React monorepos ✨
+</div>
 
-🚀 If you haven't connected to Nx Cloud yet, [complete your setup here](https://cloud.nx.app/setup/connect-workspace/guide). Get faster builds with remote caching, distributed task execution, and self-healing CI. [See how your workspace can benefit](#nx-cloud).
+---
 
-## 📦 Project Overview
+## Why Browser CI?
 
-This repository demonstrates a production-ready React monorepo with:
+Traditional CI/CD requires servers, infrastructure, and money. **Browser CI** changes that:
 
-- **2 Applications**
+- **Zero Infrastructure** — All builds run in WebContainers inside the browser
+- **Instant Setup** — No server configuration, no Docker, no CI YAML
+- **Free Forever** — No compute costs, no runner minutes
+- **Secure** — Your code never leaves your browser
+- **Works Everywhere** — Chrome, Firefox, Safari, Edge
 
-  - `shop` - React e-commerce application with product listings and detail views
-  - `api` - Backend API serving product data
+## Features
 
-- **7 Libraries**
+- **GitHub Integration** — Connect with your GitHub Personal Access Token
+- **Pull Request Sync** — Automatically fetch and list all PRs from any repo
+- **Live Pipeline Execution** — Run `npm install`, `npm run build`, `npm test`
+- **Real-time Logs** — Watch build output stream live in the terminal
+- **Merge & Delete** — Merge PRs and clean up branches directly from the UI
+- **Full Terminal** — Interactive terminal with WebContainer shell access
 
-  - `@org/shop-feature-products` - Product listing feature (React)
-  - `@org/shop-feature-product-detail` - Product detail feature (React)
-  - `@org/shop-data` - Data access layer for shop features
-  - `@org/shop-shared-ui` - Shared UI components
-  - `@org/models` - Shared data models
-  - `@org/api-products` - API product service library
-  - `@org/shared-test-utils` - Shared testing utilities
+## Quick Start
 
-- **E2E Testing**
-  - `shop-e2e` - Playwright tests for the shop application
+### Option 1: Use the Live Demo
 
-## 🚀 Quick Start
+The easiest way to try Browser CI:
+
+1. **Visit** [https://webcontainers.fly.dev](https://webcontainers.fly.dev)
+2. **Enter your GitHub Personal Access Token** (with `repo` scope)
+3. **Enter an owner** (username or organization)
+4. **Click Fetch** to load repositories
+5. **Select a repository** and **click Sync** to pull PRs
+6. **Select a PR** and **click Run CI** to execute the pipeline
+
+> **Note:** Your token stays in your browser. Nothing is sent to any server.
+
+### Option 2: Run Locally
 
 ```bash
 # Clone the repository
-git clone <your-fork-url>
-cd <your-repository-name>
+git clone https://github.com/gregoryStarr/web-containers.git
+cd web-containers
 
 # Install dependencies
-npx install
+npm install
 
-# Serve the React shop application (this will simultaneously serve the API backend)
-npx nx serve shop
+# Start the development server
+npm start
 
-# ...or you can serve the API separately
-npx nx serve api
+# Or with Nx
+npx nx serve browser-ci-pipeline
+```
 
-# Build all projects
-npx nx run-many -t build
+Open [https://localhost:4200](https://localhost:4200) and accept the self-signed certificate warning.
+
+## GitHub Token Setup
+
+To use Browser CI, you need a GitHub Personal Access Token:
+
+1. Go to [GitHub Settings → Personal Access Tokens](https://github.com/settings/tokens)
+2. Click **Generate new token (classic)**
+3. Give it a name (e.g., "Browser CI")
+4. Select the `repo` scope (full control of private repositories)
+5. Click **Generate token**
+6. Copy the token and paste it into Browser CI
+
+> **Security:** Your token is stored locally in your browser and is never transmitted to any server except directly to GitHub's API.
+
+## How It Works
+
+```
+┌─────────────────────────────────────────────────────────────┐
+│                      Your Browser                            │
+│  ┌─────────────┐    ┌─────────────┐    ┌─────────────┐     │
+│  │   UI       │───▶│  GitHub API │───▶│ WebContainer│     │
+│  │  React App  │◀───│  (your token)│◀───│   (builds)  │     │
+│  └─────────────┘    └─────────────┘    └─────────────┘     │
+│        │                                      │             │
+│        │                                      │             │
+│        ▼                                      ▼             │
+│  ┌─────────────┐                      ┌─────────────┐      │
+│  │  GitHub     │                      │   Build     │      │
+│  │  PRs & Files│                      │   Output    │      │
+│  └─────────────┘                      └─────────────┘      │
+└─────────────────────────────────────────────────────────────┘
+```
+
+1. **Connect** — Enter your GitHub token to authenticate
+2. **Fetch** — Browser CI calls GitHub's API to list repositories
+3. **Sync** — Pull all open PRs for the selected repository
+4. **Run** — WebContainer fetches the PR branch, installs deps, runs build/tests
+5. **Review** — Watch live logs and see pass/fail status
+6. **Merge** — Merge successful PRs directly from the UI
+
+## Project Structure
+
+```
+web-containers/
+├── apps/
+│   └── browser-ci-pipeline/     # Main React application
+│       ├── src/
+│       │   └── app/
+│       │       ├── components/   # UI components (modals, forms)
+│       │       ├── hooks/       # Custom React hooks
+│       │       ├── types/       # TypeScript types
+│       │       └── app.tsx      # Main application
+│       └── ...
+├── libs/
+│   └── shared/
+│       ├── ci-pipeline/          # Pipeline orchestration logic
+│       ├── github-integration/  # GitHub API client
+│       └── webcontainer-manager/# WebContainer wrapper
+├── fly.toml                     # Fly.io deployment config
+├── Dockerfile                   # Container build
+└── server.js                    # Production server
+```
+
+### Key Libraries
+
+| Library                     | Purpose                                 |
+| --------------------------- | --------------------------------------- |
+| `@org/ci-pipeline`          | Orchestrates the build pipeline stages  |
+| `@org/github-integration`   | GitHub API client for PRs, repos, files |
+| `@org/webcontainer-manager` | Wraps StackBlitz WebContainer API       |
+
+## Technology Stack
+
+- **Runtime** — [StackBlitz WebContainers](https://webcontainers.io)
+- **Frontend** — React 19, TypeScript, Tailwind CSS
+- **Build** — Vite, Nx (monorepo)
+- **Deployment** — Fly.io, Docker
+- **API** — GitHub REST API v3
+
+## Deployment
+
+The app is deployed to Fly.io. To deploy your own instance:
+
+```bash
+# Install Fly CLI
+brew install flyctl
+
+# Login
+fly auth login
+
+# Launch (first time)
+fly launch
+
+# Deploy updates
+fly deploy
+```
+
+Or use the included Docker image:
+
+```bash
+docker build -t browser-ci .
+docker run -p 3000:3000 browser-ci
+```
+
+## Architecture
+
+For deeper technical details, see [ARCHITECTURE.md](apps/browser-ci-pipeline/ARCHITECTURE.md).
+
+### Data Flow
+
+1. **User enters token** → Stored in React state (local only)
+2. **User selects owner** → GitHub API fetches repos via `/users/:owner/repos`
+3. **User selects repo** → GitHub API fetches PRs via `/repos/:owner/:repo/pulls`
+4. **User clicks Run CI**:
+   - Fetch PR branch files via GitTree API
+   - Mount files to WebContainer
+   - Execute pipeline: `install → build → test`
+   - Stream output to terminal UI
+   - Post status back to GitHub (optional)
+
+## Limitations & Use Constraints
+
+Browser CI is a powerful tool for development and testing, but it has inherent limitations due to running in a browser environment:
+
+### Browser Compatibility
+
+| Browser     | Support          | Notes                              |
+| ----------- | ---------------- | ---------------------------------- |
+| Chrome/Edge | ✅ Full          | WebContainers work natively        |
+| Firefox     | ✅ Full          | WebWorkers enabled                 |
+| Safari      | ⚠️ Experimental  | May have issues with some features |
+| Mobile      | ❌ Not supported | Requires desktop browser           |
+
+### GitHub API Rate Limits
+
+- **Unauthenticated**: 60 requests/hour
+- **Authenticated (token)**: 5,000 requests/hour
+- **Tips**: Use the manual "Fetch" button instead of auto-fetch to conserve API calls
+
+### Repository Size Constraints
+
+| Metric       | Limit      | Notes                                   |
+| ------------ | ---------- | --------------------------------------- |
+| Total files  | ~1,000     | WebContainer memory constraints         |
+| File size    | 500KB/file | Larger files filtered out               |
+| Binary files | Limited    | Images/fonts supported, not archives    |
+| Hidden dirs  | Skipped    | `.git`, `node_modules`, `dist` excluded |
+
+### Build Constraints
+
+| Constraint            | Impact                                          |
+| --------------------- | ----------------------------------------------- |
+| **No native modules** | Some npm packages with C++ bindings won't work  |
+| **Single thread**     | No parallel builds within a stage               |
+| **Browser sandbox**   | No access to system APIs or Docker              |
+| **Ephemeral**         | Each run starts fresh (no caching between runs) |
+| **Memory limit**      | ~2GB RAM available                              |
+
+### Network Requirements
+
+- **Always online** — Requires internet for GitHub API
+- **No webhooks** — Manual refresh to fetch new PRs
+- **No SSH keys** — Token-based auth only
+
+### When NOT to Use
+
+- ⛔ Production CI/CD (use GitHub Actions, CircleCI, etc.)
+- ⛔ Large monorepos with thousands of files
+- ⛔ Projects requiring native Node modules (node-sass, sharp, etc.)
+- ⛔ Parallel test execution across multiple machines
+- ⛔ Long-running builds (>10 minutes)
+
+### When TO Use
+
+- ✅ Quick PR validation during development
+- ✅ Preview builds before merging
+- ✅ Debugging CI failures locally
+- ✅ Learning/testing CI pipelines
+- ✅ Open source projects wanting free CI
+
+> **Bottom line:** Browser CI is excellent for development iteration and quick PR checks. For production CI, use dedicated CI/CD platforms.
+
+## Contributing
+
+Contributions are welcome! Please read our [contributing guidelines](CONTRIBUTING.md) first.
+
+```bash
+# Development setup
+npm install
+npm start
 
 # Run tests
-npx nx run-many -t test
+npm test
 
-# Lint all projects
-npx nx run-many -t lint
-
-# Run e2e tests
-npx nx e2e shop-e2e
-
-# Run tasks in parallel
-
-npx nx run-many -t lint test build e2e --parallel=3
-
-# Visualize the project graph
-npx nx graph
+# Build
+npm run build
 ```
 
-## 🧪 Testing the WebContainer CI Platform
+## License
 
-### Local Development Setup
+## License
 
-1. **Install dependencies:**
-   ```bash
-   npm install
-   ```
+This software is licensed under the **Business Source License 1.1 (BSL-1.1)**.
 
-2. **Start the CI Platform:**
-   ```bash
-   npx nx serve @org/browser-ci-pipeline
-   ```
+### What You Can Do
 
-3. **Open the application:**
-   - Navigate to https://localhost:4200/
-   - Accept the security certificate warning
+- ✅ View and study the source code
+- ✅ Fork the repository for personal use
+- ✅ Submit bug reports and feature requests
+- ✅ Use for personal or educational projects
+- ✅ Modify and experiment with the code
 
-4. **Configure GitHub Integration:**
-   - Enter your GitHub Personal Access Token
-   - Specify repository owner (e.g., `facebook`)
-   - Specify repository name (e.g., `react`)
+### What Requires a License
 
-5. **Test CI Functionality:**
-   - Click "Fetch PRs" to load pull requests
-   - Select a PR from the list
-   - Click "Run CI" to execute tests in WebContainers
-   - Watch real-time logs and results
+- ❌ Commercial use or revenue-generating products
+- ❌ Redistributing as part of a commercial product
+- ❌ Using to provide services to third parties
+- ❌ Building competing products
 
-### CI Testing Features
-- **Zero Infrastructure**: All testing runs in browser WebContainers
-- **Real GitHub Integration**: Fetches actual PRs and files
-- **Isolated Execution**: Each PR tests in its own container
-- **Live Status Updates**: Real-time progress and results
-- **Secure**: No code leaves your browser
+### Commercial Licensing
 
-## ⭐ Featured Nx Capabilities
+For commercial licensing inquiries, please contact the author.
 
-This repository showcases several powerful Nx features:
+See [LICENSE](LICENSE) and [NOTICE](NOTICE) for full details.
 
-### 1. 🔒 Module Boundaries
+## Acknowledgments
 
-Enforces architectural constraints using tags. Each project has specific dependencies it can use:
+- [StackBlitz](https://stackblitz.com) — For the incredible WebContainer API
+- [GitHub](https://github.com) — For the API that makes this possible
+- [Nx](https://nx.dev) — For the amazing monorepo tooling
 
-- `scope:shared` - Can be used by all projects
-- `scope:shop` - Shop-specific libraries
-- `scope:api` - API-specific libraries
-- `type:feature` - Feature libraries
-- `type:data` - Data access libraries
-- `type:ui` - UI component libraries
+---
 
-**Try it out:**
+<div align="center">
+  
+  **Built with** [StackBlitz WebContainers](https://webcontainers.io) · **Deployed on** [Fly.io](https://fly.io)
 
-```bash
-# See the current project graph and boundaries
-npx nx graph
-
-# View a specific project's details
-npx nx show project shop --web
-```
-
-[Learn more about module boundaries →](https://nx.dev/features/enforce-module-boundaries)
-
-### 2. 🎭 Playwright E2E Testing
-
-End-to-end testing with Playwright is pre-configured:
-
-```bash
-# Run e2e tests
-npx nx e2e shop-e2e
-
-# Run e2e tests in CI mode
-npx nx e2e-ci shop-e2e
-```
-
-[Learn more about E2E testing →](https://nx.dev/technologies/test-tools/playwright/introduction#e2e-testing)
-
-### 3. ⚡ Vitest for Unit Testing
-
-Fast unit testing with Vitest for React libraries:
-
-```bash
-# Test a specific library
-npx nx test shop-data
-
-# Test all projects
-npx nx run-many -t test
-```
-
-[Learn more about Vite testing →](https://nx.dev/recipes/vite)
-
-### 4. 🔧 Self-Healing CI
-
-The CI pipeline includes `nx fix-ci` which automatically identifies and suggests fixes for common issues:
-
-```bash
-# In CI, this command provides automated fixes
-npx nx fix-ci
-```
-
-This feature helps maintain a healthy CI pipeline by automatically detecting and suggesting solutions for:
-
-- Missing dependencies
-- Incorrect task configurations
-- Cache invalidation issues
-- Common build failures
-
-[Learn more about self-healing CI →](https://nx.dev/ci/features/self-healing-ci)
-
-## 📁 Project Structure
-
-```
-├── apps/
-│   ├── shop/           [scope:shop]    - React e-commerce app
-│   ├── shop-e2e/                       - E2E tests for shop
-│   └── api/            [scope:api]     - Backend API
-├── libs/
-│   ├── shop/
-│   │   ├── feature-products/        [scope:shop,type:feature] - Product listing
-│   │   ├── feature-product-detail/  [scope:shop,type:feature] - Product details
-│   │   ├── data/                    [scope:shop,type:data]    - Data access
-│   │   └── shared-ui/               [scope:shop,type:ui]      - UI components
-│   ├── api/
-│   │   └── products/    [scope:api]    - Product service
-│   └── shared/
-│       ├── models/      [scope:shared,type:data] - Shared models
-│       └── test-utils/  [scope:shared]           - Testing utilities
-├── nx.json             - Nx configuration
-├── tsconfig.json       - TypeScript configuration
-└── eslint.config.mjs   - ESLint with module boundary rules
-```
-
-## 🏷️ Understanding Tags
-
-This repository uses tags to enforce module boundaries:
-
-| Project                 | Tags                         | Can Import From              |
-| ----------------------- | ---------------------------- | ---------------------------- |
-| `shop`                  | `scope:shop`                 | `scope:shop`, `scope:shared` |
-| `api`                   | `scope:api`                  | `scope:api`, `scope:shared`  |
-| `shop-feature-products` | `scope:shop`, `type:feature` | `scope:shop`, `scope:shared` |
-| `shop-data`             | `scope:shop`, `type:data`    | `scope:shared`               |
-| `models`                | `scope:shared`, `type:data`  | Nothing (base library)       |
-
-## 📚 Useful Commands
-
-```bash
-# Project exploration
-npx nx graph                                    # Interactive dependency graph
-npx nx list                                     # List installed plugins
-npx nx show project shop --web                 # View project details
-
-# Development
-npx nx serve shop                              # Serve React app
-npx nx serve api                               # Serve backend API
-npx nx build shop                              # Build React app
-npx nx test shop-data                          # Test a specific library
-npx nx lint shop-feature-products              # Lint a specific library
-
-# Running multiple tasks
-npx nx run-many -t build                       # Build all projects
-npx nx run-many -t test --parallel=3          # Test in parallel
-npx nx run-many -t lint test build            # Run multiple targets
-
-# Affected commands (great for CI)
-npx nx affected -t build                       # Build only affected projects
-npx nx affected -t test                        # Test only affected projects
-```
-
-## 🎯 Adding New Features
-
-### Generate a new React application:
-
-```bash
-npx nx g @nx/react:app my-app
-```
-
-### Generate a new React library:
-
-```bash
-npx nx g @nx/react:lib my-lib
-```
-
-### Generate a new React component:
-
-```bash
-npx nx g @nx/react:component my-component --project=my-lib
-```
-
-### Generate a new API library:
-
-```bash
-npx nx g @nx/node:lib my-api-lib
-```
-
-You can use `npx nx list` to see all available plugins and `npx nx list <plugin-name>` to see all generators for a specific plugin.
-
-## Nx Cloud
-
-Nx Cloud ensures a [fast and scalable CI](https://nx.dev/ci/intro/why-nx-cloud?utm_source=nx_project&utm_medium=readme&utm_campaign=nx_projects) pipeline. It includes features such as:
-
-- [Remote caching](https://nx.dev/ci/features/remote-cache?utm_source=nx_project&utm_medium=readme&utm_campaign=nx_projects)
-- [Task distribution across multiple machines](https://nx.dev/ci/features/distribute-task-execution?utm_source=nx_project&utm_medium=readme&utm_campaign=nx_projects)
-- [Automated e2e test splitting](https://nx.dev/ci/features/split-e2e-tasks?utm_source=nx_project&utm_medium=readme&utm_campaign=nx_projects)
-- [Task flakiness detection and rerunning](https://nx.dev/ci/features/flaky-tasks?utm_source=nx_project&utm_medium=readme&utm_campaign=nx_projects)
-
-## Install Nx Console
-
-Nx Console is an editor extension that enriches your developer experience. It lets you run tasks, generate code, and improves code autocompletion in your IDE. It is available for VSCode and IntelliJ.
-
-[Install Nx Console &raquo;](https://nx.dev/getting-started/editor-setup?utm_source=nx_project&utm_medium=readme&utm_campaign=nx_projects)
-
-## 🔗 Learn More
-
-- [Nx Documentation](https://nx.dev)
-- [React Monorepo Tutorial](https://nx.dev/getting-started/tutorials/react-monorepo-tutorial)
-- [Module Boundaries](https://nx.dev/features/enforce-module-boundaries)
-- [Docker Integration](https://nx.dev/recipes/nx-release/release-docker-images)
-- [Playwright Testing](https://nx.dev/technologies/test-tools/playwright/introduction#e2e-testing)
-- [Vite with React](https://nx.dev/recipes/vite)
-- [Nx Cloud](https://nx.dev/ci/intro/why-nx-cloud)
-- [Releasing Packages](https://nx.dev/features/manage-releases)
-
-## 💬 Community
-
-Join the Nx community:
-
-- [Discord](https://go.nx.dev/community)
-- [X (Twitter)](https://twitter.com/nxdevtools)
-- [LinkedIn](https://www.linkedin.com/company/nrwl)
-- [YouTube](https://www.youtube.com/@nxdevtools)
-- [Blog](https://nx.dev/blog)
+</div>

@@ -1,3 +1,10 @@
+/**
+ * Pipeline Execution Hook
+ *
+ * Copyright (c) 2024 Gregory Starr
+ * @license BSL-1.1
+ */
+
 import { useState, useCallback } from 'react';
 import type { CIPipelineOrchestrator } from '@org/ci-pipeline';
 import type { PR, AppStatus, PipelineSettings } from '../types';

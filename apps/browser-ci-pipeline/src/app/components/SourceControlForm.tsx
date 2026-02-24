@@ -1,3 +1,12 @@
+/**
+ * Source Control Form Component
+ *
+ * Copyright (c) 2024 Gregory Starr
+ * @license BSL-1.1
+ *
+ * Form for GitHub token, owner, and repo selection
+ */
+
 import React from 'react';
 import { RefreshCw, ChevronDown, Database } from 'lucide-react';
 import type { AppStatus } from '../types';

@@ -1,3 +1,15 @@
+/**
+ * Browser CI Pipeline
+ *
+ * Copyright (c) 2024 Gregory Starr
+ * Business Source License 1.1
+ *
+ * NON-COMMERCIAL USE: This software is free for personal, educational,
+ * and non-commercial use. Commercial use requires a license.
+ *
+ * @license BSL-1.1
+ */
+
 import { useState } from 'react';
 import { PRList } from './components/PRList';
 import { PRDetail } from './components/PRDetail';

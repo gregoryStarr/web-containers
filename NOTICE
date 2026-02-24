@@ -1,0 +1,44 @@
+# Browser CI Pipeline - Notice
+
+Copyright (c) 2024 Gregory Starr. All rights reserved.
+
+## Trademark Notice
+
+"Browser CI Pipeline" and the Browser CI logo are proprietary trademarks 
+of Gregory Starr. Unauthorized use of these trademarks is prohibited.
+
+## Third-Party Licenses
+
+This software includes components licensed under the following open 
+source licenses:
+
+- React - MIT License
+- TypeScript - Apache 2.0 License
+- Vite - MIT License
+- Nx - MIT License
+- StackBlitz WebContainers - proprietary license
+
+See individual package.json files for full license texts.
+
+## Technology Stack
+
+This project uses the following technologies:
+
+- StackBlitz WebContainers (browser-based Node.js runtime)
+- React 19
+- TypeScript
+- Vite
+- Nx
+- Tailwind CSS
+- Fly.io
+
+## Commercial Use
+
+This software is licensed under the Business Source License 1.1 (BSL-1.1).
+Commercial use requires a license from the copyright holder.
+
+For licensing inquiries, please contact the author.
+
+---
+
+DISCLAIMER: This software is provided "AS IS" without warranty of any kind.

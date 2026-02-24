@@ -1,0 +1,75 @@
+Business Source License 1.1
+
+Terms and Conditions for copying, distributing and modifying
+software, except as otherwise noted.
+
+## Grant of Rights
+
+Copyright (c) 2024 Gregory Starr
+
+NON-COMMERCIAL USE: This software is provided free of charge for 
+personal, educational, and non-commercial use. You may view, copy, 
+and modify this software for these purposes.
+
+COMMERCIAL USE: Use of this software for commercial purposes is 
+strictly prohibited without a valid commercial license agreement 
+from the copyright holder. "Commercial use" includes, but is not 
+limited to:
+
+- Using the software to provide services to third parties for payment
+- Using the software in any product or service that generates revenue
+- Redistributing the software as part of a commercial product
+- Using the software in any business or for any business purpose
+
+To obtain a commercial license, contact the copyright holder.
+
+## Derivative Works
+
+You may create and distribute derivative works, provided that:
+
+- You include prominent notice that the software was modified
+- You license your derivative works under the same terms
+
+## Disclaimer
+
+THIS SOFTWARE IS PROVIDED "AS IS" WITHOUT WARRANTY OF ANY KIND, 
+EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES 
+OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND 
+NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT 
+HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, 
+WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING 
+FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR 
+OTHER DEALINGS IN THE SOFTWARE.
+
+## Trademarks
+
+"Browser CI Pipeline" and the Browser CI logo are trademarks of 
+Gregory Starr. This license does not grant permission to use these 
+trademarks.
+
+## Contact
+
+For commercial licensing inquiries:
+- Email: [Your email]
+- GitHub: https://github.com/gregoryStarr/web-containers
+
+---
+
+## Additional Terms
+
+### 1. Attribution
+
+If you distribute this software (modified or unmodified), you must 
+provide attribution to the original author in any documentation, 
+about screen, or other materials.
+
+### 2. Contribution
+
+If you submit contributions to this software, you agree that 
+your contributions will be licensed under the same BSL terms.
+
+### 3. Migration to MIT
+
+On [DATE - 3 YEARS FROM FIRST PUBLISH], this license shall 
+automatically convert to the MIT License. The converted license 
+will apply to all versions of the software.

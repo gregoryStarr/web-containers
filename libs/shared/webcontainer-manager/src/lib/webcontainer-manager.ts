@@ -1,3 +1,12 @@
+/**
+ * WebContainer Manager
+ *
+ * Copyright (c) 2024 Gregory Starr
+ * @license BSL-1.1
+ *
+ * Wraps StackBlitz WebContainer API for CI pipeline execution
+ */
+
 import { WebContainer, FileSystemTree } from '@webcontainer/api';
 
 export interface CommandResult {

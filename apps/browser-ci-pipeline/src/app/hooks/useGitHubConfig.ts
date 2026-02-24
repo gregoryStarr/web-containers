@@ -1,3 +1,10 @@
+/**
+ * GitHub Configuration Hook
+ *
+ * Copyright (c) 2024 Gregory Starr
+ * @license BSL-1.1
+ */
+
 import { useState, useCallback, useEffect } from 'react';
 import { GitHubIntegrationService } from '@org/github-integration';
 import type { GitHubConfig } from '../types';

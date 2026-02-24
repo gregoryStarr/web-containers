@@ -1,3 +1,12 @@
+/**
+ * CI Pipeline Orchestrator
+ *
+ * Copyright (c) 2024 Gregory Starr
+ * @license BSL-1.1
+ *
+ * Orchestrates CI pipeline execution in WebContainers
+ */
+
 import { WebContainerManager, CommandResult } from '@org/webcontainer-manager';
 import { GitHubIntegrationService } from '@org/github-integration';
 

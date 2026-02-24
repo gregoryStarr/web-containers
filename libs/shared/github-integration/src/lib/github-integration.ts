@@ -1,3 +1,12 @@
+/**
+ * GitHub Integration Service
+ *
+ * Copyright (c) 2024 Gregory Starr
+ * @license BSL-1.1
+ *
+ * Provides GitHub API integration for PRs, repos, and file fetching
+ */
+
 // Note: In browser environment, GitHub API calls require CORS and authentication
 // Webhooks cannot be received directly; use polling or external service
 
@@ -386,9 +395,7 @@ export class GitHubIntegrationService {
   }
 
   // Fetch the full recursive tree using the Git Trees API (single request)
-  private async fetchRepoTree(
-    ref?: string
-  ): Promise<{
+  private async fetchRepoTree(ref?: string): Promise<{
     tree: { path: string; type: string; size: number; url: string }[];
     branch: string;
   }> {

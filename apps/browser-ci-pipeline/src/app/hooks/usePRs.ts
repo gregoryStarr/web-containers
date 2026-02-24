@@ -1,3 +1,10 @@
+/**
+ * Pull Requests Hook
+ *
+ * Copyright (c) 2024 Gregory Starr
+ * @license BSL-1.1
+ */
+
 import { useState, useEffect, useCallback } from 'react';
 import type { GitHubIntegrationService } from '@org/github-integration';
 import type { PR, AppStatus } from '../types';
