@@ -64,28 +64,28 @@ export function PRDetail({
   return (
     <div className="space-y-8 animate-in fade-in slide-in-from-bottom-2 duration-500 pb-10">
       <div className="bg-white rounded-[32px] shadow-[0_8px_30px_rgb(0,0,0,0.04)] border border-[var(--color-earth-border)] overflow-hidden">
-        <div className="p-10">
-          <div className="flex flex-col space-y-10">
+        <div className="p-6">
+          <div className="flex flex-col space-y-6">
             <div>
-              <div className="flex items-center space-x-4 text-[var(--color-earth-muted)] mb-5">
-                <span className="text-xs font-black bg-stone-900 text-white px-3 py-1 rounded-lg uppercase tracking-widest shadow-md">
+              <div className="flex items-center space-x-3 text-[var(--color-earth-muted)] mb-3">
+                <span className="text-[10px] font-black bg-stone-900 text-white px-2 py-0.5 rounded-md uppercase tracking-widest shadow-md">
                   PR #{pr.number}
                 </span>
-                <ChevronRight size={18} className="text-stone-300" />
-                <div className="flex items-center space-x-2 bg-stone-50 px-3 py-1 rounded-lg border border-stone-100 text-xs font-bold text-stone-600">
-                  <span className="w-2 h-2 rounded-full bg-emerald-400" />
+                <ChevronRight size={14} className="text-stone-300" />
+                <div className="flex items-center space-x-1.5 bg-stone-50 px-2 py-0.5 rounded-md border border-stone-100 text-[10px] font-bold text-stone-600">
+                  <span className="w-1.5 h-1.5 rounded-full bg-emerald-400" />
                   <span className="truncate max-w-sm font-mono">
                     {pr.head?.ref || 'unknown'}
                   </span>
                 </div>
               </div>
-              <h2 className="text-4xl font-black text-stone-900 tracking-tight leading-tight mb-6">
+              <h2 className="text-2xl font-black text-stone-900 tracking-tight leading-tight mb-4">
                 {pr.title}
               </h2>
 
-              <div className="flex flex-wrap items-center gap-6">
+              <div className="flex flex-wrap items-center gap-4">
                 <span
-                  className={`inline-flex items-center space-x-2.5 px-5 py-2 rounded-full text-[11px] font-black uppercase tracking-[0.15em] shadow-lg transition-all duration-300 ${
+                  className={`inline-flex items-center space-x-2 px-4 py-1.5 rounded-full text-[10px] font-black uppercase tracking-[0.15em] shadow-md transition-all duration-300 ${
                     pr.status === 'success'
                       ? 'bg-emerald-500 text-white shadow-emerald-500/20'
                       : pr.status === 'failure'
@@ -95,24 +95,24 @@ export function PRDetail({
                       : 'bg-stone-100 text-stone-500'
                   }`}
                 >
-                  {pr.status === 'success' && <CheckCircle2 size={16} />}
-                  {pr.status === 'failure' && <XCircle size={16} />}
+                  {pr.status === 'success' && <CheckCircle2 size={14} />}
+                  {pr.status === 'failure' && <XCircle size={14} />}
                   {pr.status === 'running' && (
-                    <div className="animate-spin rounded-full h-4 w-4 border-2 border-white/30 border-t-white"></div>
+                    <div className="animate-spin rounded-full h-3.5 w-3.5 border-2 border-white/30 border-t-white"></div>
                   )}
                   <span>Status: {pr.status}</span>
                 </span>
 
                 {pr.lastRun && (
-                  <span className="flex items-center text-sm text-[var(--color-earth-muted)] font-medium">
-                    <Info size={16} className="mr-1.5 text-stone-400" />
+                  <span className="flex items-center text-xs text-[var(--color-earth-muted)] font-medium">
+                    <Info size={14} className="mr-1 text-stone-400" />
                     Last run: {pr.lastRun.toLocaleString()}
                   </span>
                 )}
               </div>
             </div>
 
-            <div className="pt-10 border-t border-stone-100 flex flex-wrap items-center justify-between gap-6">
+            <div className="pt-6 border-t border-stone-100 flex flex-wrap items-center justify-between gap-4">
               <div className="flex flex-wrap gap-4">
                 <button
                   onClick={() => onRunCI(pr)}

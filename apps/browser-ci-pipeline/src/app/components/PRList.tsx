@@ -17,17 +17,17 @@ interface PRListProps {
 export function PRList({ prs, selectedPR, onSelectPR }: PRListProps) {
   return (
     <div className="bg-white rounded-[32px] border border-[var(--color-earth-border)] shadow-[0_8px_30px_rgb(0,0,0,0.04)] overflow-hidden animate-in fade-in slide-in-from-bottom-4 duration-700">
-      <div className="p-8 border-b border-stone-100 bg-stone-50/30 flex items-center justify-between">
-        <h2 className="text-xl font-black tracking-tight text-stone-900 flex items-center space-x-3">
-          <div className="p-2 bg-white rounded-xl shadow-sm border border-stone-100">
+      <div className="p-5 border-b border-stone-100 bg-stone-50/30 flex items-center justify-between">
+        <h2 className="text-lg font-black tracking-tight text-stone-900 flex items-center space-x-2.5">
+          <div className="p-1.5 bg-white rounded-lg shadow-sm border border-stone-100">
             <GitPullRequest
-              size={20}
+              size={18}
               className="text-[var(--color-earth-primary)]"
             />
           </div>
           <span>Active Pull Requests</span>
         </h2>
-        <span className="bg-stone-900 text-stone-100 text-[10px] font-black px-3 py-1 rounded-lg uppercase tracking-widest shadow-lg">
+        <span className="bg-stone-900 text-stone-100 text-[9px] font-black px-2.5 py-0.5 rounded-md uppercase tracking-widest">
           {prs.length} Open
         </span>
       </div>
@@ -37,7 +37,7 @@ export function PRList({ prs, selectedPR, onSelectPR }: PRListProps) {
           return (
             <div
               key={pr.id}
-              className={`p-6 cursor-pointer transition-all duration-300 group ${
+              className={`p-4 cursor-pointer transition-all duration-300 group ${
                 isSelected
                   ? 'bg-stone-50/80 ring-2 ring-inset ring-[var(--color-earth-primary)]'
                   : 'hover:bg-stone-50'

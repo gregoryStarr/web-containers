@@ -64,27 +64,27 @@ export class CIPipelineOrchestrator {
 
     try {
       this.onStageChange?.('Initializing...');
-      this.logger?.(`🚀 Starting CI pipeline for PR #${prNumber}`);
+      this.logger?.(`[INTERNAL] Starting CI pipeline for PR #${prNumber}`);
       this.log('INTERNAL', 'Initializing CI pipeline orchestrator...');
 
       // 1. Fetch PR details to get the head ref
-      this.logger?.('🔍 Fetching PR details...');
+      this.logger?.('[NETWORK] Fetching PR details...');
       this.log('NETWORK', `GET https://api.github.com/repos/.../pulls/${prNumber}`);
       const prData = await this.github.fetchPR(prNumber);
       const headRef = prData.head.ref;
-      this.logger?.(`✅ PR #${prNumber} is on branch "${headRef}"`);
+      this.logger?.(`[INTERNAL] PR #${prNumber} branch identified: "${headRef}"`);
       this.log('INTERNAL', `PR head SHA: ${prData.head.sha}`);
 
       // 2. Fetch repository files and mount them
       this.onStageChange?.('Mounting files...');
-      this.logger?.('📥 Fetching repository files...');
+      this.logger?.('[NETWORK] Fetching repository files...');
       this.log('NETWORK', `Fetching tree for ref: ${headRef}`);
       const containerFiles = await this.github.createContainerFilesFromRepo(headRef);
       
-      this.logger?.('🔧 Mounting files in WebContainer...');
+      this.logger?.('[FILESYSTEM] Mounting files in WebContainer...');
       this.log('FILESYSTEM', `Mounting ${Object.keys(containerFiles).length} top-level items to root`);
       await this.manager.container?.mount(containerFiles);
-      this.logger?.('✅ Files mounted successfully');
+      this.logger?.('[SUCCESS] Files mounted successfully');
 
       // 3. Define stages
       const stages = [
@@ -127,7 +127,7 @@ export class CIPipelineOrchestrator {
         }
 
         this.onStageChange?.(name);
-        this.logger?.(`\n🔄 Starting Stage: ${name}`);
+        this.logger?.(`\n[STAGE] Starting Stage: ${name}`);
         this.log('COMMANDS', `Preparing to run: ${command}`);
         
         let outputCategory: LogCategory = 'INTERNAL';
@@ -145,13 +145,38 @@ export class CIPipelineOrchestrator {
           command, 
           options.cwd, 
           timeout,
-          (data) => this.log(outputCategory, data)
+          (data) => {
+            // Always log categorical output for debugging
+            this.log(outputCategory, data);
+            
+            // Special handling for the TEST stage to provide live updates even if not verbose
+            if (key === 'test') {
+              const lines = data.split('\n');
+              for (const line of lines) {
+                if (!line.trim()) continue;
+                
+                // Identify test results and starts
+                if (line.includes('PASS') || line.includes('✓')) {
+                  this.logger?.(`[TESTS] [PASS] ${line.trim()}`);
+                } else if (line.includes('FAIL') || line.includes('✕')) {
+                  this.logger?.(`[TESTS] [FAIL] ${line.trim()}`);
+                } else if (line.includes('RUNS')) {
+                  this.logger?.(`[TESTS] [RUNNING] ${line.trim()}`);
+                } else if (line.includes('Test Suites') || line.includes('Tests:')) {
+                  this.logger?.(`[TESTS] [SUMMARY] ${line.trim()}`);
+                } else {
+                  // General test output
+                  this.logger?.(`[TESTS] ${line.trim()}`);
+                }
+              }
+            }
+          }
         );
         
         this.log('COMMANDS', `Stage "${name}" finished with exit code ${result.exitCode} (${result.duration}ms)`);
         
         if (result.stderr) {
-          this.logger?.(`⚠️ [WARNING] ${name} produced stderr output:`);
+          this.logger?.(`[WARNING] ${name} produced stderr output:`);
           this.logger?.(result.stderr);
           this.log('INTERNAL', `Full stderr captured (${result.stderr.length} bytes)`);
         }
@@ -164,15 +189,15 @@ export class CIPipelineOrchestrator {
         });
 
         if (result.success) {
-          this.logger?.(`✅ [SUCCESS] Stage "${name}" completed successfully.`);
+          this.logger?.(`[SUCCESS] Stage "${name}" completed successfully.`);
         } else {
-          this.logger?.(`❌ [FAILURE] Stage "${name}" failed with exit code ${result.exitCode}.`);
+          this.logger?.(`[FAILURE] Stage "${name}" failed with exit code ${result.exitCode}.`);
           this.aborted = true;
         }
       }
 
     } catch (error: any) {
-      this.logger?.(`🚨 [CRITICAL ERROR] Pipeline execution halted: ${error.message}`);
+      this.logger?.(`[CRITICAL] Pipeline execution halted: ${error.message}`);
       throw error;
     } finally {
       this.onStageChange?.('');

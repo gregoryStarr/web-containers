@@ -94,13 +94,13 @@ export function PipelineLogs({
               <button
                 key={cat}
                 onClick={() => toggleFilter(cat)}
-                disabled={!isAvailable && !isActive}
+                disabled={false}
                 className={`px-3 py-1 rounded-md text-[10px] font-black uppercase tracking-wider transition-all duration-300 border shadow-sm ${
                   isActive
-                    ? 'bg-[var(--color-earth-primary)] text-white border-[var(--color-earth-primary)] shadow-[0_0_15px_rgba(95,113,97,0.4)] scale-105'
+                    ? 'bg-[var(--color-earth-primary)] text-white border-[var(--color-earth-primary)] shadow-[0_0_15px_rgba(95,113,97,0.4)] scale-105 opacity-100'
                     : isAvailable
-                    ? 'bg-stone-800/80 text-stone-100 border-stone-700 hover:bg-stone-700 hover:border-stone-600 hover:shadow-md'
-                    : 'bg-stone-900/40 text-stone-600 border-transparent opacity-40 cursor-not-allowed'
+                    ? 'bg-stone-800/80 text-stone-100 border-stone-700 hover:bg-stone-700 hover:border-stone-600 hover:shadow-md opacity-100'
+                    : 'bg-stone-900/40 text-stone-600 border-stone-800 hover:border-stone-700 transition-opacity'
                 }`}
               >
                 {cat}
@@ -131,52 +131,66 @@ export function PipelineLogs({
               let iconClass = 'text-stone-500';
 
               if (log.includes('[SUCCESS]')) {
-                textClass = 'text-emerald-300 font-bold';
+                textClass = 'text-emerald-400 font-bold';
                 Icon = CheckCircle2;
-                iconClass = 'text-emerald-400';
+                iconClass = 'text-emerald-500';
               } else if (
                 log.includes('[FAILURE]') ||
-                log.includes('[CRITICAL')
+                log.includes('[CRITICAL]')
               ) {
-                textClass = 'text-rose-300 font-bold';
+                textClass = 'text-rose-400 font-bold';
                 Icon = XCircle;
-                iconClass = 'text-rose-400';
+                iconClass = 'text-rose-500';
               } else if (log.includes('[WARNING]')) {
-                textClass = 'text-amber-200';
+                textClass = 'text-amber-400';
                 Icon = AlertTriangle;
-                iconClass = 'text-amber-400';
+                iconClass = 'text-amber-500';
               } else if (log.includes('[COMMANDS]')) {
-                textClass = 'text-sky-100 font-semibold italic';
+                textClass = 'text-sky-300 font-semibold italic';
                 Icon = Code;
-                iconClass = 'text-sky-300';
+                iconClass = 'text-sky-400';
               } else if (log.includes('[INTERNAL]')) {
-                textClass = 'text-stone-300 text-[11px] opacity-70';
+                textClass = 'text-stone-400 text-[11px]';
                 Icon = Cpu;
                 iconClass = 'text-stone-500';
               } else if (
                 log.includes('[NETWORK]') ||
                 log.includes('[GitHub]')
               ) {
-                textClass = 'text-indigo-100';
+                textClass = 'text-indigo-300';
                 Icon = Globe;
-                iconClass = 'text-indigo-300';
+                iconClass = 'text-indigo-400';
               } else if (log.includes('[INSTALL]')) {
                 textClass = 'text-stone-300';
                 Icon = Package;
                 iconClass = 'text-stone-400';
               } else if (log.includes('[BUILD]')) {
-                textClass = 'text-zinc-300';
+                textClass = 'text-stone-300';
                 Icon = Hammer;
-                iconClass = 'text-zinc-400';
+                iconClass = 'text-stone-400';
               } else if (log.includes('[TESTS]')) {
-                textClass = 'text-slate-300';
+                textClass = 'text-stone-300';
                 Icon = FlaskConical;
-                iconClass = 'text-slate-400';
-              } else if (log.includes('🔄 Starting Stage:')) {
+                iconClass = 'text-stone-400';
+
+                if (log.includes('[PASS]')) {
+                  textClass = 'text-emerald-400 font-black';
+                  iconClass = 'text-emerald-500';
+                } else if (log.includes('[FAIL]')) {
+                  textClass = 'text-rose-400 font-black';
+                  iconClass = 'text-rose-500';
+                } else if (log.includes('[RUNNING]')) {
+                  textClass = 'text-sky-300 font-bold italic';
+                  iconClass = 'text-sky-400';
+                } else if (log.includes('[SUMMARY]')) {
+                  textClass =
+                    'text-stone-100 font-black border-t border-white/5 pt-2 mt-2';
+                }
+              } else if (log.includes('[STAGE] Starting Stage:')) {
                 textClass =
-                  'text-white font-black uppercase tracking-[0.2em] py-4 bg-white/10 shadow-lg my-2';
+                  'text-white font-black uppercase tracking-[0.2em] py-8 my-4 border-y border-white/5';
                 Icon = FastForward;
-                iconClass = 'text-white scale-125';
+                iconClass = 'text-[var(--color-earth-primary)] scale-125';
               }
 
               const isEven = i % 2 === 0;
@@ -188,17 +202,11 @@ export function PipelineLogs({
                     isEven ? 'bg-white/[0.01]' : ''
                   }`}
                 >
-                  <div className="w-10 flex-shrink-0 flex justify-center pt-1">
-                    <div
-                      className={`p-1.5 rounded-lg bg-black/20 border border-white/5 group-hover:border-white/10 transition-colors ${iconClass
-                        .replace('text-', 'bg-')
-                        .replace('300', '900/20')}`}
-                    >
-                      <Icon
-                        size={14}
-                        className={`${iconClass} group-hover:scale-110 transition-transform`}
-                      />
-                    </div>
+                  <div className="w-10 flex-shrink-0 flex justify-center pt-1.5">
+                    <Icon
+                      size={16}
+                      className={`${iconClass} group-hover:scale-110 transition-transform`}
+                    />
                   </div>
                   <div className="w-12 flex-shrink-0 text-right pr-6 select-none pt-1.5">
                     <span className="text-stone-700 font-mono text-[10px] tabular-nums group-hover:text-stone-500 transition-colors">
@@ -209,7 +217,7 @@ export function PipelineLogs({
                     className={`flex-1 min-w-0 ${textClass} break-words whitespace-pre-wrap pt-0.5 font-medium tracking-tight`}
                   >
                     {log.replace(
-                      /\[(SUCCESS|FAILURE|CRITICAL|WARNING|COMMANDS|INTERNAL|NETWORK|GitHub|INSTALL|BUILD|TESTS)\]\s*/,
+                      /\[(SUCCESS|FAILURE|CRITICAL|WARNING|COMMANDS|INTERNAL|NETWORK|GitHub|INSTALL|BUILD|TESTS|STAGE)\]\s*(\[(PASS|FAIL|RUNNING|SUMMARY)\]\s*)?/,
                       ''
                     )}
                   </div>
