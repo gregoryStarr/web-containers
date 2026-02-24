@@ -52,13 +52,56 @@ export default function App() {
   const [isAboutOpen, setIsAboutOpen] = useState(false);
   const [isHowToUseOpen, setIsHowToUseOpen] = useState(false);
   const [mergeError, setMergeError] = useState<string | null>(null);
-  const [availableOwners, setAvailableOwners] = useState<string[]>([]);
   const [availableRepos, setAvailableRepos] = useState<string[]>([]);
+  const [debouncedOwner, setDebouncedOwner] = useState('');
   const [githubConfig, setGithubConfig] = useState({
     token: import.meta.env.VITE_GITHUB_TOKEN || '',
-    owner: 'gregoryStarr',
-    repo: 'Web-Containers',
+    owner: '',
+    repo: '',
   });
+
+  const [gitOwner, setGitOwner] = useState('');
+  const [gitRepo, setGitRepo] = useState('');
+
+  // Debounce owner input
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      setDebouncedOwner(gitOwner);
+    }, 500);
+    return () => clearTimeout(timer);
+  }, [gitOwner]);
+
+  // Fetch repos when debounced owner changes
+  useEffect(() => {
+    const fetchRepos = async () => {
+      if (!githubConfig.token || !debouncedOwner) {
+        setAvailableRepos([]);
+        return;
+      }
+      try {
+        const github = new GitHubIntegrationService(
+          githubConfig.token,
+          debouncedOwner,
+          '',
+          () => {}
+        );
+        const repos = await github.fetchRepos(debouncedOwner);
+        setAvailableRepos(repos.map((r: any) => r.name));
+      } catch (err: any) {
+        console.error('Failed to fetch repos:', err);
+        setAvailableRepos([]);
+      }
+    };
+    fetchRepos();
+  }, [githubConfig.token, debouncedOwner]);
+
+  // Clear gitRepo when owner changes
+  useEffect(() => {
+    if (gitOwner !== githubConfig.owner) {
+      setGitRepo('');
+      setGithubConfig((prev) => ({ ...prev, repo: '' }));
+    }
+  }, [gitOwner]);
 
   const [pipelineSettings, setPipelineSettings] = useState({
     packageManager: 'npm' as 'npm' | 'yarn' | 'pnpm',
@@ -116,19 +159,10 @@ export default function App() {
 
       setServices({ github, webcontainer, orchestrator });
       setStatus('online');
-
-      // Fetch available owners
-      try {
-        const user = await github.fetchUser();
-        const orgs = await github.fetchOrgs();
-        setAvailableOwners([user.login, ...orgs.map((o) => o.login)]);
-      } catch (err: any) {
-        // Handle error
-      }
     };
 
     initServices();
-  }, [githubConfig.token, status]); // Added status to dependency array to prevent re-init if status changes
+  }, [githubConfig.token, status]);
 
   // Update GitHub service when owner/repo changes
   useEffect(() => {
@@ -166,22 +200,14 @@ export default function App() {
     pipelineSettings.logCategories, // Added pipeline settings to dependencies
   ]);
 
-  // Fetch repos when owner changes
+  // Clear gitOwner and gitRepo when token is cleared
   useEffect(() => {
-    const fetchRepos = async () => {
-      if (!services.github || !githubConfig.owner) {
-        setAvailableRepos([]);
-        return;
-      }
-      try {
-        const repos = await services.github.fetchRepos(githubConfig.owner);
-        setAvailableRepos(repos.map((r) => r.name));
-      } catch (err: any) {
-        console.error('Failed to fetch repos:', err);
-      }
-    };
-    fetchRepos();
-  }, [services.github, githubConfig.owner]);
+    if (!githubConfig.token) {
+      setGitOwner('');
+      setGitRepo('');
+      setAvailableRepos([]);
+    }
+  }, [githubConfig.token]);
 
   const fetchPRs = useCallback(async () => {
     if (!services.github) {
@@ -423,34 +449,24 @@ export default function App() {
                     Owner / Organization
                   </label>
                   <div className="relative group">
-                    <select
-                      value={githubConfig.owner}
-                      onChange={(e) =>
+                    <input
+                      type="text"
+                      value={gitOwner}
+                      disabled={!githubConfig.token}
+                      onChange={(e) => {
+                        setGitOwner(e.target.value);
                         setGithubConfig((prev) => ({
                           ...prev,
                           owner: e.target.value,
-                        }))
+                        }));
+                      }}
+                      className="w-full bg-stone-50/50 border-2 border-stone-100 hover:border-stone-200 focus:border-[var(--color-earth-primary)] focus:bg-white rounded-2xl px-5 py-3.5 text-sm font-bold transition-all duration-300 outline-none shadow-sm disabled:opacity-50 disabled:cursor-not-allowed"
+                      placeholder={
+                        githubConfig.token
+                          ? 'e.g., gregoryStarr'
+                          : 'Enter token first'
                       }
-                      className="w-full bg-stone-50/50 border-2 border-stone-100 hover:border-stone-200 focus:border-[var(--color-earth-primary)] focus:bg-white rounded-2xl px-5 py-3.5 text-sm font-bold transition-all duration-300 outline-none shadow-sm appearance-none cursor-pointer pr-12"
-                    >
-                      <option value="" disabled>
-                        Select Organization
-                      </option>
-                      {!availableOwners.includes(githubConfig.owner) &&
-                        githubConfig.owner && (
-                          <option value={githubConfig.owner}>
-                            {githubConfig.owner}
-                          </option>
-                        )}
-                      {availableOwners.map((owner) => (
-                        <option key={owner} value={owner}>
-                          {owner}
-                        </option>
-                      ))}
-                    </select>
-                    <div className="absolute inset-y-0 right-0 flex items-center pr-4 pointer-events-none text-stone-400 group-hover:text-stone-600 transition-colors">
-                      <ChevronDown size={20} />
-                    </div>
+                    />
                   </div>
                 </div>
 
@@ -460,29 +476,35 @@ export default function App() {
                   </label>
                   <div className="relative group">
                     <select
-                      value={githubConfig.repo}
-                      onChange={(e) =>
+                      value={gitRepo}
+                      disabled={!githubConfig.token || !githubConfig.owner}
+                      onChange={(e) => {
+                        setGitRepo(e.target.value);
                         setGithubConfig((prev) => ({
                           ...prev,
                           repo: e.target.value,
-                        }))
-                      }
-                      className="w-full bg-stone-50/50 border-2 border-stone-100 hover:border-stone-200 focus:border-[var(--color-earth-primary)] focus:bg-white rounded-xl px-4 py-2.5 text-sm font-bold transition-all duration-300 outline-none shadow-sm appearance-none cursor-pointer pr-10"
+                        }));
+                      }}
+                      className="w-full bg-stone-50/50 border-2 border-stone-100 hover:border-stone-200 focus:border-[var(--color-earth-primary)] focus:bg-white rounded-xl px-4 py-2.5 text-sm font-bold transition-all duration-300 outline-none shadow-sm appearance-none cursor-pointer pr-10 disabled:opacity-50 disabled:cursor-not-allowed"
                     >
                       <option value="" disabled>
-                        Select Repository
+                        {githubConfig.token && githubConfig.owner
+                          ? 'Select Repository'
+                          : 'Select owner first'}
                       </option>
-                      {!availableRepos.includes(githubConfig.repo) &&
-                        githubConfig.repo && (
-                          <option value={githubConfig.repo}>
-                            {githubConfig.repo}
-                          </option>
-                        )}
-                      {availableRepos.map((repo) => (
-                        <option key={repo} value={repo}>
-                          {repo}
-                        </option>
-                      ))}
+                      {githubConfig.token && githubConfig.owner && (
+                        <>
+                          {!availableRepos.includes(gitRepo) &&
+                            githubConfig.repo && (
+                              <option value={gitRepo}>{gitRepo}</option>
+                            )}
+                          {availableRepos.map((repo) => (
+                            <option key={repo} value={repo}>
+                              {repo}
+                            </option>
+                          ))}
+                        </>
+                      )}
                     </select>
                     <div className="absolute inset-y-0 right-0 flex items-center pr-3 pointer-events-none text-stone-400 group-hover:text-stone-600 transition-colors">
                       <ChevronDown size={18} />
