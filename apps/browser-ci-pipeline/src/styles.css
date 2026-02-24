@@ -1,0 +1,37 @@
+@import 'tailwindcss';
+@import url('https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500;600;700&display=swap');
+
+:root {
+  /* High-Tech Orange Design System */
+  --color-earth-bg: #f9fafb;
+  --color-earth-surface: #ffffff;
+  --color-earth-border: #e5e7eb;
+  --color-earth-primary: #ff6b00;
+  --color-earth-secondary: #ffd580;
+  --color-earth-text: #1f2937;
+  --color-earth-muted: #6b7280;
+
+  --color-forest-dark: #111827;
+  --color-forest-accent: #374151;
+}
+
+body {
+  font-family: 'IBM Plex Sans', sans-serif;
+  background-color: var(--color-earth-bg);
+  color: var(--color-earth-text);
+  margin: 0;
+}
+
+pre,
+code {
+  font-family: 'JetBrains Mono', monospace;
+}
+
+/* Custom transitions */
+.transition-earth {
+  transition: all 200ms cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.rounded-earth {
+  border-radius: 12px;
+}
