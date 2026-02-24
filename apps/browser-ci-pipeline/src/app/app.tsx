@@ -2,11 +2,17 @@ import { useState, useEffect, useCallback } from 'react';
 import {
   Github,
   Settings,
-  ClipboardList,
   RefreshCw,
   Layout,
   Database,
   ChevronDown,
+  ClipboardList,
+  List,
+  Info,
+  ExternalLink,
+  BookOpen,
+  Heart,
+  X,
 } from 'lucide-react';
 import { PRList } from './components/PRList';
 import { PRDetail } from './components/PRDetail';
@@ -43,6 +49,9 @@ export default function App() {
   >('offline');
   const [currentStage, setCurrentStage] = useState<string>('');
   const [isTerminalEnabled, setIsTerminalEnabled] = useState(true);
+  const [isAboutOpen, setIsAboutOpen] = useState(false);
+  const [isHowToUseOpen, setIsHowToUseOpen] = useState(false);
+  const [mergeError, setMergeError] = useState<string | null>(null);
   const [availableOwners, setAvailableOwners] = useState<string[]>([]);
   const [availableRepos, setAvailableRepos] = useState<string[]>([]);
   const [githubConfig, setGithubConfig] = useState({
@@ -56,7 +65,15 @@ export default function App() {
     workingDirectory: '.',
     buildCommand: 'npm run build',
     verboseLogging: false,
-    logCategories: ['COMMANDS', 'FILESYSTEM', 'NETWORK', 'INTERNAL'],
+    logCategories: [
+      'COMMANDS',
+      'FILESYSTEM',
+      'NETWORK',
+      'INTERNAL',
+      'INSTALL',
+      'BUILD',
+      'TESTS',
+    ],
   });
 
   const [services, setServices] = useState<{
@@ -262,6 +279,7 @@ export default function App() {
   const handleMergePR = async (pr: PR, deleteBranch: boolean) => {
     if (!services.github || isMerging) return;
     setIsMerging(true);
+    setMergeError(null);
     try {
       await services.github.mergePR(
         pr.number,
@@ -274,83 +292,136 @@ export default function App() {
       if (selectedPR?.id === pr.id) setSelectedPR(null);
     } catch (error: any) {
       console.error('Merge failed:', error);
+      setMergeError(error.message || 'An unknown error occurred during merge');
     } finally {
       setIsMerging(false);
     }
   };
 
   return (
-    <div className="flex flex-col h-screen bg-[var(--color-earth-bg)] overflow-hidden">
-      {/* Header */}
-      <header className="h-16 bg-white border-b border-[var(--color-earth-border)] flex items-center justify-between px-8 z-30 flex-shrink-0 shadow-sm">
-        <div className="flex items-center space-x-6">
-          <div className="flex items-center space-x-3 group cursor-default">
-            <div className="bg-[var(--color-earth-primary)] p-2 rounded-lg text-white shadow-soft transition-earth group-hover:scale-105">
-              <Github size={22} />
-            </div>
-            <h1 className="text-xl font-bold tracking-tight text-[var(--color-earth-text)]">
-              Browser CI{' '}
-              <span className="text-[var(--color-earth-primary)] font-black">
+    <div className="flex flex-col h-screen bg-[#F9F9F4] text-[var(--color-earth-text)] overflow-hidden font-sans selection:bg-[var(--color-earth-secondary)] selection:text-[var(--color-earth-text)]">
+      {/* Premium Header */}
+      <header className="flex-shrink-0 z-40 bg-white/70 backdrop-blur-xl border-b border-[var(--color-earth-border)] px-10 py-5 flex items-center justify-between shadow-[0_2px_15px_-3px_rgba(0,0,0,0.07),0_10px_20px_-2px_rgba(0,0,0,0.04)]">
+        <div className="flex items-center space-x-5">
+          <div className="p-3 bg-stone-900 rounded-2xl shadow-xl ring-8 ring-stone-100/50 group cursor-pointer transition-all duration-500 hover:rotate-6 hover:scale-110">
+            <ClipboardList
+              className="text-emerald-400 group-hover:text-emerald-300 transition-colors"
+              size={26}
+            />
+          </div>
+          <div className="flex flex-col">
+            <h1 className="text-2xl font-black tracking-tight text-stone-900 leading-none flex items-center">
+              CI{' '}
+              <span className="ml-1.5 px-2 py-0.5 bg-[var(--color-earth-primary)] text-white text-[10px] rounded-md tracking-widest uppercase">
                 Pipeline
               </span>
             </h1>
+            <div className="flex items-center space-x-2.5 mt-2">
+              <div className="relative flex items-center justify-center">
+                <div
+                  className={`absolute w-3 h-3 rounded-full opacity-40 animate-ping ${
+                    status === 'online' ? 'bg-emerald-500' : 'bg-amber-500'
+                  }`}
+                />
+                <div
+                  className={`relative w-2 h-2 rounded-full ${
+                    status === 'online'
+                      ? 'bg-emerald-500'
+                      : 'bg-amber-500 shadow-[0_0_8px_rgba(245,158,11,0.5)]'
+                  }`}
+                />
+              </div>
+              <span className="text-[10px] font-black uppercase tracking-[0.2em] text-stone-400">
+                Network {status}
+              </span>
+            </div>
           </div>
-
-          <nav className="hidden md:flex items-center space-x-1">
-            <button
-              onClick={() => setIsSettingsOpen(true)}
-              className="flex items-center space-x-2 px-4 py-2 rounded-full text-sm font-bold text-[var(--color-earth-muted)] hover:bg-[var(--color-earth-secondary)]/10 hover:text-[var(--color-earth-primary)] transition-earth"
-            >
-              <Settings size={16} />
-              <span>Pipeline Settings</span>
-            </button>
-          </nav>
         </div>
 
-        <div className="flex items-center space-x-4">
-          <StatusIndicator status={status} />
+        <div className="flex items-center space-x-6">
+          {/* GitHub Context */}
+          <div className="hidden lg:flex items-center space-x-3 bg-stone-100/80 px-5 py-2.5 rounded-2xl border border-stone-200/50 shadow-inner">
+            <div className="p-1 bgColor-white rounded-md shadow-sm">
+              <Github size={14} className="text-stone-600" />
+            </div>
+            <div className="flex flex-col">
+              <span className="text-[8px] font-black text-stone-400 uppercase tracking-widest leading-none mb-1">
+                Active Scope
+              </span>
+              <span className="text-[11px] font-bold text-stone-700 tracking-tight">
+                {githubConfig.owner && githubConfig.repo
+                  ? `${githubConfig.owner}/${githubConfig.repo}`
+                  : 'Disconnected'}
+              </span>
+            </div>
+          </div>
+
+          <button
+            onClick={() => setIsSettingsOpen(true)}
+            className="p-3 bg-stone-50 hover:bg-white rounded-2xl border border-stone-200 shadow-sm transition-all duration-300 text-stone-500 hover:text-stone-900 hover:shadow-md hover:-translate-y-0.5 group relative"
+          >
+            <Settings
+              size={20}
+              className="group-hover:rotate-45 transition-transform duration-500"
+            />
+            <span className="absolute -top-1 -right-1 w-3 h-3 bg-[var(--color-earth-primary)] rounded-full border-2 border-white scale-0 group-hover:scale-100 transition-transform shadow-sm" />
+          </button>
         </div>
       </header>
 
       {/* Main Content Area */}
       <main className="flex flex-1 overflow-hidden relative">
-        {/* Left Column: Repository Config + PRs (Stacked Vertically) */}
-        <div className="flex-1 overflow-y-auto custom-scrollbar bg-stone-50/30">
-          <div className="max-w-4xl mx-auto p-8 space-y-8">
+        <div className="flex-1 overflow-y-auto custom-scrollbar relative bg-[#FDFBF7]">
+          <div className="max-w-[1400px] mx-auto p-10 space-y-10">
             {/* Repository Configuration */}
-            <section className="bg-white rounded-earth border border-[var(--color-earth-border)] shadow-sm overflow-hidden p-6">
-              <div className="flex items-center space-x-3 mb-6">
-                <Database
-                  size={20}
-                  className="text-[var(--color-earth-primary)]"
-                />
-                <h2 className="text-lg font-bold text-[var(--color-earth-text)] tracking-tight">
-                  Repository Configuration
-                </h2>
+            <section className="bg-white rounded-[32px] border border-[var(--color-earth-border)] shadow-[0_8px_30px_rgb(0,0,0,0.04)] overflow-hidden p-10 relative">
+              <div className="absolute top-0 right-0 p-10 pointer-events-none opacity-[0.03]">
+                <Database size={120} className="text-stone-900" />
               </div>
-              <div className="grid grid-cols-1 md:grid-cols-4 gap-6 items-end">
-                <div className="space-y-2">
-                  <label className="text-[10px] font-bold uppercase tracking-widest text-[var(--color-earth-muted)]">
-                    GitHub Token
-                  </label>
-                  <input
-                    type="password"
-                    value={githubConfig.token}
-                    onChange={(e) =>
-                      setGithubConfig((prev) => ({
-                        ...prev,
-                        token: e.target.value,
-                      }))
-                    }
-                    className="w-full bg-[var(--color-earth-bg)] border border-[var(--color-earth-border)] rounded-lg px-4 py-2.5 text-sm focus:ring-2 focus:ring-[var(--color-earth-primary)] transition-earth"
-                    placeholder="ghp_..."
+
+              <div className="flex items-center space-x-4 mb-10">
+                <div className="p-3 bg-[var(--color-earth-bg)] rounded-2xl border border-[var(--color-earth-border)]">
+                  <Database
+                    size={24}
+                    className="text-[var(--color-earth-primary)]"
                   />
                 </div>
-                <div className="space-y-2">
-                  <label className="text-[10px] font-bold uppercase tracking-widest text-[var(--color-earth-muted)]">
-                    Owner
+                <div className="flex flex-col">
+                  <h2 className="text-2xl font-black text-stone-900 tracking-tight">
+                    Source Control
+                  </h2>
+                  <p className="text-sm text-stone-500 font-medium">
+                    Configure your GitHub connection to sync pull requests
+                  </p>
+                </div>
+              </div>
+
+              <div className="grid grid-cols-1 md:grid-cols-4 gap-8 items-end relative z-10">
+                <div className="space-y-3">
+                  <label className="text-[10px] font-black uppercase tracking-[0.2em] text-stone-400 ml-1">
+                    Authorization Token
                   </label>
-                  <div className="relative">
+                  <div className="relative group">
+                    <input
+                      type="password"
+                      value={githubConfig.token}
+                      onChange={(e) =>
+                        setGithubConfig((prev) => ({
+                          ...prev,
+                          token: e.target.value,
+                        }))
+                      }
+                      className="w-full bg-stone-50/50 border-2 border-stone-100 hover:border-stone-200 focus:border-[var(--color-earth-primary)] focus:bg-white rounded-2xl px-5 py-3.5 text-sm font-medium transition-all duration-300 outline-none shadow-sm"
+                      placeholder="ghp_..."
+                    />
+                  </div>
+                </div>
+
+                <div className="space-y-3">
+                  <label className="text-[10px] font-black uppercase tracking-[0.2em] text-stone-400 ml-1">
+                    Owner / Organization
+                  </label>
+                  <div className="relative group">
                     <select
                       value={githubConfig.owner}
                       onChange={(e) =>
@@ -359,10 +430,10 @@ export default function App() {
                           owner: e.target.value,
                         }))
                       }
-                      className="w-full bg-[var(--color-earth-bg)] border border-[var(--color-earth-border)] rounded-lg px-4 py-2.5 text-sm focus:ring-2 focus:ring-[var(--color-earth-primary)] transition-earth pr-10 appearance-none"
+                      className="w-full bg-stone-50/50 border-2 border-stone-100 hover:border-stone-200 focus:border-[var(--color-earth-primary)] focus:bg-white rounded-2xl px-5 py-3.5 text-sm font-bold transition-all duration-300 outline-none shadow-sm appearance-none cursor-pointer pr-12"
                     >
                       <option value="" disabled>
-                        Select Owner
+                        Select Organization
                       </option>
                       {!availableOwners.includes(githubConfig.owner) &&
                         githubConfig.owner && (
@@ -376,16 +447,17 @@ export default function App() {
                         </option>
                       ))}
                     </select>
-                    <div className="absolute inset-y-0 right-0 flex items-center pr-3 pointer-events-none text-[var(--color-earth-muted)]">
-                      <ChevronDown size={16} />
+                    <div className="absolute inset-y-0 right-0 flex items-center pr-4 pointer-events-none text-stone-400 group-hover:text-stone-600 transition-colors">
+                      <ChevronDown size={20} />
                     </div>
                   </div>
                 </div>
-                <div className="flex-1 space-y-2">
-                  <label className="text-[10px] font-bold uppercase tracking-widest text-[var(--color-earth-muted)]">
-                    Repository
+
+                <div className="space-y-3">
+                  <label className="text-[10px] font-black uppercase tracking-[0.2em] text-stone-400 ml-1">
+                    Repository Name
                   </label>
-                  <div className="relative">
+                  <div className="relative group">
                     <select
                       value={githubConfig.repo}
                       onChange={(e) =>
@@ -394,7 +466,7 @@ export default function App() {
                           repo: e.target.value,
                         }))
                       }
-                      className="w-full bg-[var(--color-earth-bg)] border border-[var(--color-earth-border)] rounded-lg px-4 py-2.5 text-sm focus:ring-2 focus:ring-[var(--color-earth-primary)] transition-earth pr-10 appearance-none"
+                      className="w-full bg-stone-50/50 border-2 border-stone-100 hover:border-stone-200 focus:border-[var(--color-earth-primary)] focus:bg-white rounded-2xl px-5 py-3.5 text-sm font-bold transition-all duration-300 outline-none shadow-sm appearance-none cursor-pointer pr-12"
                     >
                       <option value="" disabled>
                         Select Repository
@@ -411,68 +483,66 @@ export default function App() {
                         </option>
                       ))}
                     </select>
-                    <div className="absolute inset-y-0 right-0 flex items-center pr-3 pointer-events-none text-[var(--color-earth-muted)]">
-                      <ChevronDown size={16} />
+                    <div className="absolute inset-y-0 right-0 flex items-center pr-4 pointer-events-none text-stone-400 group-hover:text-stone-600 transition-colors">
+                      <ChevronDown size={20} />
                     </div>
                   </div>
                 </div>
 
-                <div className="space-y-2">
-                  <div className="h-[14px]" />{' '}
-                  {/* Spacer for label alignment */}
+                <div>
                   <button
-                    onClick={fetchPRs}
-                    disabled={status === 'busy'}
-                    className="w-full flex items-center justify-center space-x-2 bg-[var(--color-earth-primary)] hover:brightness-110 disabled:opacity-50 text-white px-4 py-2.5 rounded-lg text-sm font-bold transition-earth shadow-sm"
+                    onClick={fetchPRs} // Changed from refreshPRs to fetchPRs to match existing function
+                    className="w-full bg-stone-900 border-2 border-stone-900 hover:bg-stone-800 hover:border-stone-800 text-stone-100 font-black uppercase tracking-widest text-[11px] py-4 rounded-2xl transition-all duration-300 shadow-lg hover:shadow-xl active:scale-[0.98] flex items-center justify-center space-x-3 disabled:opacity-50"
+                    disabled={!githubConfig.owner || !githubConfig.repo}
                   >
                     <RefreshCw
-                      size={18}
+                      size={14}
                       className={status === 'busy' ? 'animate-spin' : ''}
                     />
-                    <span>Fetch PRs</span>
+                    <span>Sync Repository</span>
                   </button>
                 </div>
               </div>
             </section>
 
-            {/* Pull Requests Selection Section */}
-            <div className="grid grid-cols-1 gap-8">
+            {/* PR Detail (Top) */}
+            {selectedPR ? (
               <section>
-                <PRList
-                  prs={prs}
-                  selectedPR={selectedPR}
-                  onSelectPR={setSelectedPR}
+                <PRDetail
+                  pr={selectedPR}
+                  onRunCI={handleRunCI}
+                  onMerge={handleMergePR}
+                  isRunning={isRunning}
+                  isMerging={isMerging}
+                  mergeError={mergeError}
+                  onClearMergeError={() => setMergeError(null)}
                 />
               </section>
+            ) : (
+              <section className="bg-white/50 border-2 border-dashed border-[var(--color-earth-border)] rounded-earth p-16 flex flex-col items-center justify-center text-center space-y-4">
+                <div className="p-6 bg-stone-100/50 rounded-full">
+                  <Layout size={48} className="text-stone-300" />
+                </div>
+                <div>
+                  <h3 className="text-xl font-bold text-stone-500">
+                    No PR Selected
+                  </h3>
+                  <p className="text-stone-400 max-w-xs mt-2 font-medium">
+                    Select a pull request from the list below to view details
+                    and run the CI pipeline.
+                  </p>
+                </div>
+              </section>
+            )}
 
-              {selectedPR ? (
-                <section>
-                  <PRDetail
-                    pr={selectedPR}
-                    isRunning={isRunning}
-                    isMerging={isMerging}
-                    onRunCI={handleRunCI}
-                    onSkip={() => services.orchestrator?.forceNextStage()}
-                    onMerge={handleMergePR}
-                  />
-                </section>
-              ) : (
-                <section className="bg-white/50 border-2 border-dashed border-[var(--color-earth-border)] rounded-earth p-16 flex flex-col items-center justify-center text-center space-y-4">
-                  <div className="p-6 bg-stone-100/50 rounded-full">
-                    <Layout size={48} className="text-stone-300" />
-                  </div>
-                  <div>
-                    <h3 className="text-xl font-bold text-stone-500">
-                      No PR Selected
-                    </h3>
-                    <p className="text-stone-400 max-w-xs mt-2 font-medium">
-                      Select a pull request from the list above to view details
-                      and run the CI pipeline.
-                    </p>
-                  </div>
-                </section>
-              )}
-            </div>
+            {/* PR List (Bottom) */}
+            <section className="pt-8 border-t border-[var(--color-earth-border)]/30">
+              <PRList
+                prs={prs}
+                onSelectPR={(pr) => setSelectedPR(pr)}
+                selectedPR={selectedPR}
+              />
+            </section>
           </div>
         </div>
 
@@ -518,6 +588,200 @@ export default function App() {
           });
         }}
       />
+
+      {/* Footer */}
+      <footer className="flex-shrink-0 bg-white/80 backdrop-blur-md border-t border-stone-200 px-10 py-4 flex items-center justify-between z-30">
+        <div className="flex items-center space-x-6">
+          <div className="flex items-center space-x-2 text-stone-400 text-[10px] font-bold uppercase tracking-widest">
+            <span>&copy; {new Date().getFullYear()}</span>
+            <span className="w-1 h-1 bg-stone-300 rounded-full" />
+            <span>
+              {new Date().toLocaleDateString(undefined, {
+                month: 'short',
+                day: 'numeric',
+              })}
+            </span>
+          </div>
+          <div className="flex items-center space-x-4">
+            <button
+              onClick={() => setIsAboutOpen(true)}
+              className="text-[10px] font-black uppercase tracking-widest text-stone-500 hover:text-stone-900 transition-colors flex items-center space-x-1.5"
+            >
+              <Info size={12} />
+              <span>About</span>
+            </button>
+            <button
+              onClick={() => setIsHowToUseOpen(true)}
+              className="text-[10px] font-black uppercase tracking-widest text-stone-500 hover:text-stone-900 transition-colors flex items-center space-x-1.5"
+            >
+              <BookOpen size={12} />
+              <span>How to Use</span>
+            </button>
+          </div>
+        </div>
+
+        <div className="flex items-center space-x-2 text-[10px] font-bold text-stone-400">
+          <span>Made with</span>
+          <Heart
+            size={12}
+            className="text-rose-500 fill-rose-500 animate-pulse"
+          />
+          <span>by</span>
+          <a
+            href="https://github.com/gregoryStarr"
+            target="_blank"
+            rel="noopener noreferrer"
+            className="text-stone-600 hover:text-stone-900 transition-colors flex items-center space-x-1"
+          >
+            <span>Gregory Starr</span>
+            <ExternalLink size={10} />
+          </a>
+          <span className="mx-1 text-stone-300">|</span>
+          <a
+            href="https://stackblitz.com"
+            target="_blank"
+            rel="noopener noreferrer"
+            className="text-[var(--color-earth-primary)] font-black hover:opacity-80 transition-opacity"
+          >
+            StackBlitz WebContainers
+          </a>
+        </div>
+      </footer>
+
+      {/* About Modal */}
+      {isAboutOpen && (
+        <div className="fixed inset-0 z-[100] flex items-center justify-center p-6 animate-in fade-in duration-300">
+          <div
+            className="absolute inset-0 bg-stone-900/40 backdrop-blur-sm"
+            onClick={() => setIsAboutOpen(false)}
+          />
+          <div className="relative w-full max-w-lg bg-white rounded-[32px] shadow-2xl border border-stone-200 overflow-hidden animate-in zoom-in-95 duration-300">
+            <div className="p-8">
+              <div className="flex items-center justify-between mb-6">
+                <div className="flex items-center space-x-3">
+                  <div className="p-2 bg-stone-100 rounded-xl">
+                    <Info size={20} className="text-stone-600" />
+                  </div>
+                  <h3 className="text-xl font-black text-stone-900 uppercase tracking-widest text-sm">
+                    About CI Pipeline
+                  </h3>
+                </div>
+                <button
+                  onClick={() => setIsAboutOpen(false)}
+                  className="p-2 hover:bg-stone-100 rounded-full transition-colors text-stone-400"
+                >
+                  <X size={20} />
+                </button>
+              </div>
+              <div className="space-y-6">
+                <p className="text-stone-600 text-sm leading-relaxed font-medium">
+                  The CI Pipeline Platform is a browser-based continuous
+                  integration tool powered by StackBlitz WebContainers. It
+                  allows you to run your build and test pipelines directly in
+                  your browser with full filesystem and terminal support.
+                </p>
+                <div className="p-6 bg-stone-50 rounded-2xl border border-stone-100">
+                  <h4 className="text-[10px] font-black text-stone-400 uppercase tracking-[0.2em] mb-4">
+                    Author Information
+                  </h4>
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <div className="text-sm font-black text-stone-900">
+                        Astralis One
+                      </div>
+                      <div className="text-xs font-bold text-stone-500">
+                        Engineer: Gregory Starr
+                      </div>
+                    </div>
+                    <a
+                      href="https://github.com/gregoryStarr"
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="p-3 bg-white rounded-xl shadow-sm border border-stone-200 hover:border-stone-900 transition-all group"
+                    >
+                      <Github
+                        size={20}
+                        className="text-stone-400 group-hover:text-stone-900 transition-colors"
+                      />
+                    </a>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* How to Use Modal */}
+      {isHowToUseOpen && (
+        <div className="fixed inset-0 z-[100] flex items-center justify-center p-6 animate-in fade-in duration-300">
+          <div
+            className="absolute inset-0 bg-stone-900/40 backdrop-blur-sm"
+            onClick={() => setIsHowToUseOpen(false)}
+          />
+          <div className="relative w-full max-w-lg bg-white rounded-[32px] shadow-2xl border border-stone-200 overflow-hidden animate-in zoom-in-95 duration-300">
+            <div className="p-8">
+              <div className="flex items-center justify-between mb-6">
+                <div className="flex items-center space-x-3">
+                  <div className="p-2 bg-stone-100 rounded-xl">
+                    <BookOpen size={20} className="text-stone-600" />
+                  </div>
+                  <h3 className="text-xl font-black text-stone-900 uppercase tracking-widest text-sm">
+                    How to Use
+                  </h3>
+                </div>
+                <button
+                  onClick={() => setIsHowToUseOpen(false)}
+                  className="p-2 hover:bg-stone-100 rounded-full transition-colors text-stone-400"
+                >
+                  <X size={20} />
+                </button>
+              </div>
+              <div className="space-y-4">
+                {[
+                  {
+                    step: '01',
+                    title: 'Authenticate',
+                    desc: 'Enter your GitHub personal access token in the Source Control panel.',
+                  },
+                  {
+                    step: '02',
+                    title: 'Connect',
+                    desc: 'Select the organization and repository you want to monitor.',
+                  },
+                  {
+                    step: '03',
+                    title: 'Sync',
+                    desc: 'Click "Sync Repository" to fetch the latest pull requests.',
+                  },
+                  {
+                    step: '04',
+                    title: 'Run Pipeline',
+                    desc: 'Select a PR and click "Run CI Pipeline" to execute your build tasks.',
+                  },
+                ].map((item) => (
+                  <div
+                    key={item.step}
+                    className="flex space-x-4 p-4 rounded-2xl hover:bg-stone-50 transition-colors"
+                  >
+                    <div className="text-lg font-black text-[var(--color-earth-primary)] opacity-30">
+                      {item.step}
+                    </div>
+                    <div>
+                      <div className="text-sm font-black text-stone-900">
+                        {item.title}
+                      </div>
+                      <div className="text-xs font-bold text-stone-500 mt-0.5">
+                        {item.desc}
+                      </div>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

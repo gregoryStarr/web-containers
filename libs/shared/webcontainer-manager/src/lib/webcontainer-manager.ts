@@ -63,7 +63,7 @@ export class WebContainerManager {
     }
   }
 
-  async installDependencies(command: string, args: string[] = []): Promise<CommandResult> {
+  async installDependencies(command: string, args: string[] = [], onOutput?: (data: string) => void): Promise<CommandResult> {
     if (!this._container || !this.isBooted) {
       throw new Error('Container is not booted');
     }
@@ -95,12 +95,12 @@ export class WebContainerManager {
       this.logger?.(`⚠️ Could not write .npmrc: ${err}`);
     }
 
-    return this.executeCommand(command, args);
+    return this.executeCommand(command, args, undefined, onOutput);
   }
 
 
 
-  async executeCommand(command: string, args: string[] = [], cwd?: string): Promise<CommandResult> {
+  async executeCommand(command: string, args: string[] = [], cwd?: string, onOutput?: (data: string) => void): Promise<CommandResult> {
     if (!this._container || !this.isBooted) {
       throw new Error('Container is not booted');
     }
@@ -124,6 +124,7 @@ export class WebContainerManager {
         write: (data) => {
           output.push(data);
           this.logger?.(data);
+          if (onOutput) onOutput(data);
         },
       }));
 

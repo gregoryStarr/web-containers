@@ -23,7 +23,7 @@ export interface PipelineOptions {
   cwd?: string;
 }
 
-export type LogCategory = 'COMMANDS' | 'FILESYSTEM' | 'NETWORK' | 'INTERNAL';
+export type LogCategory = 'COMMANDS' | 'FILESYSTEM' | 'NETWORK' | 'INTERNAL' | 'INSTALL' | 'BUILD' | 'TESTS';
 
 export interface LoggingConfig {
   verbose: boolean;
@@ -130,20 +130,26 @@ export class CIPipelineOrchestrator {
         this.logger?.(`\n🔄 Starting Stage: ${name}`);
         this.log('COMMANDS', `Preparing to run: ${command}`);
         
+        let outputCategory: LogCategory = 'INTERNAL';
         if (key === 'install') {
+          outputCategory = 'INSTALL';
           this.log('INTERNAL', 'Checking for lockfiles and pre-install hooks...');
         } else if (key === 'build') {
+          outputCategory = 'BUILD';
           this.log('INTERNAL', 'Scanning for build scripts in package.json...');
+        } else if (key === 'test') {
+          outputCategory = 'TESTS';
         }
 
-        const result = await this.executeCommandWithTimeout(command, options.cwd, timeout);
+        const result = await this.executeCommandWithTimeout(
+          command, 
+          options.cwd, 
+          timeout,
+          (data) => this.log(outputCategory, data)
+        );
         
         this.log('COMMANDS', `Stage "${name}" finished with exit code ${result.exitCode} (${result.duration}ms)`);
         
-        if (result.stdout && this.logConfig.verbose) {
-          this.log('INTERNAL', `Output snippet: ${result.stdout.substring(0, 200)}...`);
-        }
-
         if (result.stderr) {
           this.logger?.(`⚠️ [WARNING] ${name} produced stderr output:`);
           this.logger?.(result.stderr);
@@ -178,11 +184,12 @@ export class CIPipelineOrchestrator {
   private async executeCommandWithTimeout(
     fullCommand: string,
     cwd?: string,
-    timeoutDuration: number = 300000
+    timeoutDuration: number = 300000,
+    onOutput?: (data: string) => void
   ): Promise<CommandResult> {
     const [command, ...args] = fullCommand.split(' ');
     
-    const executePromise = this.manager.executeCommand(command, args, cwd);
+    const executePromise = this.manager.executeCommand(command, args, cwd, onOutput);
     
     const timeoutPromise = new Promise<CommandResult>((_, reject) => {
       setTimeout(() => reject(new Error(`Command "${fullCommand}" timed out after ${timeoutDuration}ms`)), timeoutDuration);
