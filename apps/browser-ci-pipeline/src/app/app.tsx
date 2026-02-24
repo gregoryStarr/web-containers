@@ -515,7 +515,7 @@ export default function App() {
                 />
               </section>
             ) : (
-              <span class="inline-flex items-center space-x-2 px-3 py-1 rounded-full text-[10px] font-black uppercase tracking-[0.1em] shadow-sm transition-all duration-200 bg-amber-500 text-stone-400">
+              <span className="inline-flex items-center space-x-2 px-3 py-1 rounded-full text-[10px] font-white uppercase tracking-[0.1em] cursor-help shadow-sm transition-all duration-200 bg-stone-50 text-stone-400">
                 <span>Select a PR to continue</span>
               </span>
             )}
