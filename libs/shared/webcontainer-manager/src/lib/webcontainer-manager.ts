@@ -22,7 +22,9 @@ export class WebContainerManager {
 
   async bootContainer(files: FileSystemTree = {}): Promise<void> {
     if (this.isBooted) {
-      this.logger?.('Container already booted on this manager instance, skipping.');
+      this.logger?.(
+        'Container already booted on this manager instance, skipping.'
+      );
       return;
     }
 
@@ -63,7 +65,11 @@ export class WebContainerManager {
     }
   }
 
-  async installDependencies(command: string, args: string[] = [], onOutput?: (data: string) => void): Promise<CommandResult> {
+  async installDependencies(
+    command: string,
+    args: string[] = [],
+    onOutput?: (data: string) => void
+  ): Promise<CommandResult> {
     if (!this._container || !this.isBooted) {
       throw new Error('Container is not booted');
     }
@@ -78,7 +84,7 @@ export class WebContainerManager {
           stdout: 'Skipped installation (node_modules exists)',
           stderr: '',
           exitCode: 0,
-          duration: 0
+          duration: 0,
         };
       }
     } catch (error) {
@@ -89,7 +95,9 @@ export class WebContainerManager {
     // Write .npmrc to disable engine-strict checks (WebContainer runs Node 18,
     // but some transitive deps like minimatch@10 declare Node >=20)
     try {
-      this.logger?.('📝 Writing .npmrc with engine-strict=false for Node 18 compatibility...');
+      this.logger?.(
+        '📝 Writing .npmrc with engine-strict=false for Node 18 compatibility...'
+      );
       await this._container.fs.writeFile('.npmrc', 'engine-strict=false\n');
     } catch (err) {
       this.logger?.(`⚠️ Could not write .npmrc: ${err}`);
@@ -98,9 +106,12 @@ export class WebContainerManager {
     return this.executeCommand(command, args, undefined, onOutput);
   }
 
-
-
-  async executeCommand(command: string, args: string[] = [], cwd?: string, onOutput?: (data: string) => void): Promise<CommandResult> {
+  async executeCommand(
+    command: string,
+    args: string[] = [],
+    cwd?: string,
+    onOutput?: (data: string) => void
+  ): Promise<CommandResult> {
     if (!this._container || !this.isBooted) {
       throw new Error('Container is not booted');
     }
@@ -112,29 +123,38 @@ export class WebContainerManager {
 
     try {
       // Use jsh to ensure environment is set up correctly
-      const process = await this._container.spawn('jsh', ['-c', [command, ...args].join(' ')], {
-        cwd,
-        env: { CI: 'true' },
-      });
+      const process = await this._container.spawn(
+        'jsh',
+        ['-c', [command, ...args].join(' ')],
+        {
+          cwd,
+          env: { CI: 'true' },
+        }
+      );
 
       const output: string[] = [];
 
       // Collect output (combined stdout/stderr in WebContainer)
-      const outputStreamPromise = process.output.pipeTo(new WritableStream({
-        write: (data) => {
-          output.push(data);
-          this.logger?.(data);
-          if (onOutput) onOutput(data);
-        },
-      }));
+      const outputStreamPromise = process.output.pipeTo(
+        new WritableStream({
+          write: (data) => {
+            output.push(data);
+            this.logger?.(data);
+            if (onOutput) onOutput(data);
+          },
+        })
+      );
 
       const exitCode = await process.exit;
-      
+
       // Ensure we finished reading all output
       await outputStreamPromise;
 
       const duration = Date.now() - startTime;
-      console.log('Output:', output.join(''));
+      console.log(
+        `[WebContainer] Command exit code: ${exitCode}, Output:`,
+        output.join('')
+      );
       return {
         success: exitCode === 0,
         stdout: output.join(''),
@@ -154,7 +174,11 @@ export class WebContainerManager {
     }
   }
 
-  async captureOutput(command: string, args: string[] = [], cwd?: string): Promise<string> {
+  async captureOutput(
+    command: string,
+    args: string[] = [],
+    cwd?: string
+  ): Promise<string> {
     const result = await this.executeCommand(command, args, cwd);
     console.log('Output:', result.stdout);
     return result.stdout;
@@ -177,6 +201,3 @@ export class WebContainerManager {
     return this._container;
   }
 }
-
-
- 

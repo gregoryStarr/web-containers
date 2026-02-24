@@ -53,7 +53,7 @@ export default function App() {
   const [isHowToUseOpen, setIsHowToUseOpen] = useState(false);
   const [mergeError, setMergeError] = useState<string | null>(null);
   const [availableRepos, setAvailableRepos] = useState<string[]>([]);
-  const [debouncedOwner, setDebouncedOwner] = useState('');
+  const [isFetchingRepos, setIsFetchingRepos] = useState(false);
   const [githubConfig, setGithubConfig] = useState({
     token: import.meta.env.VITE_GITHUB_TOKEN || '',
     owner: '',
@@ -63,37 +63,28 @@ export default function App() {
   const [gitOwner, setGitOwner] = useState('');
   const [gitRepo, setGitRepo] = useState('');
 
-  // Debounce owner input
-  useEffect(() => {
-    const timer = setTimeout(() => {
-      setDebouncedOwner(gitOwner);
-    }, 500);
-    return () => clearTimeout(timer);
-  }, [gitOwner]);
-
-  // Fetch repos when debounced owner changes
-  useEffect(() => {
-    const fetchRepos = async () => {
-      if (!githubConfig.token || !debouncedOwner) {
-        setAvailableRepos([]);
-        return;
-      }
-      try {
-        const github = new GitHubIntegrationService(
-          githubConfig.token,
-          debouncedOwner,
-          '',
-          () => {}
-        );
-        const repos = await github.fetchRepos(debouncedOwner);
-        setAvailableRepos(repos.map((r: any) => r.name));
-      } catch (err: any) {
-        console.error('Failed to fetch repos:', err);
-        setAvailableRepos([]);
-      }
-    };
-    fetchRepos();
-  }, [githubConfig.token, debouncedOwner]);
+  // Manual fetch repos function - called on Enter key or fetch button click
+  const handleFetchRepos = useCallback(async () => {
+    if (!githubConfig.token || !gitOwner || isFetchingRepos) {
+      return;
+    }
+    setIsFetchingRepos(true);
+    try {
+      const github = new GitHubIntegrationService(
+        githubConfig.token,
+        gitOwner,
+        '',
+        () => {}
+      );
+      const repos = await github.fetchRepos(gitOwner);
+      setAvailableRepos(repos.map((r: any) => r.name));
+    } catch (err: any) {
+      console.error('Failed to fetch repos:', err);
+      setAvailableRepos([]);
+    } finally {
+      setIsFetchingRepos(false);
+    }
+  }, [githubConfig.token, gitOwner, isFetchingRepos]);
 
   // Clear gitRepo when owner changes
   useEffect(() => {
@@ -448,25 +439,46 @@ export default function App() {
                   <label className="text-[10px] font-black uppercase tracking-[0.2em] text-stone-400 ml-1">
                     Owner / Organization
                   </label>
-                  <div className="relative group">
-                    <input
-                      type="text"
-                      value={gitOwner}
-                      disabled={!githubConfig.token}
-                      onChange={(e) => {
-                        setGitOwner(e.target.value);
-                        setGithubConfig((prev) => ({
-                          ...prev,
-                          owner: e.target.value,
-                        }));
-                      }}
-                      className="w-full bg-stone-50/50 border-2 border-stone-100 hover:border-stone-200 focus:border-[var(--color-earth-primary)] focus:bg-white rounded-2xl px-5 py-3.5 text-sm font-bold transition-all duration-300 outline-none shadow-sm disabled:opacity-50 disabled:cursor-not-allowed"
-                      placeholder={
-                        githubConfig.token
-                          ? 'e.g., gregoryStarr'
-                          : 'Enter token first'
+                  <div className="flex items-center space-x-2">
+                    <div className="relative group flex-1">
+                      <input
+                        type="text"
+                        value={gitOwner}
+                        disabled={!githubConfig.token}
+                        onChange={(e) => {
+                          setGitOwner(e.target.value);
+                          setGithubConfig((prev) => ({
+                            ...prev,
+                            owner: e.target.value,
+                          }));
+                        }}
+                        onKeyDown={(e) => {
+                          if (e.key === 'Enter') {
+                            handleFetchRepos();
+                          }
+                        }}
+                        className="w-full bg-stone-50/50 border-2 border-stone-100 hover:border-stone-200 focus:border-[var(--color-earth-primary)] focus:bg-white rounded-2xl px-5 py-3.5 text-sm font-bold transition-all duration-300 outline-none shadow-sm disabled:opacity-50 disabled:cursor-not-allowed"
+                        placeholder={
+                          githubConfig.token
+                            ? 'e.g., gregoryStarr'
+                            : 'Enter token first'
+                        }
+                      />
+                    </div>
+                    <button
+                      type="button"
+                      onClick={handleFetchRepos}
+                      disabled={
+                        !githubConfig.token || !gitOwner || isFetchingRepos
                       }
-                    />
+                      className="px-4 py-3 bg-stone-900 hover:bg-stone-800 border-2 border-stone-900 text-stone-100 font-black uppercase tracking-widest text-[10px] rounded-2xl transition-all duration-300 shadow-md hover:shadow-lg disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center min-w-[80px]"
+                    >
+                      {isFetchingRepos ? (
+                        <RefreshCw size={12} className="animate-spin" />
+                      ) : (
+                        'Fetch'
+                      )}
+                    </button>
                   </div>
                 </div>
 
