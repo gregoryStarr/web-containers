@@ -13,7 +13,6 @@ import {
   ExternalLink,
 } from 'lucide-react';
 import { PR } from '../types';
-import { PRMergeModal } from './PRMergeModal';
 
 interface PRDetailProps {
   pr: PR;
@@ -40,7 +39,6 @@ export function PRDetail({
 }: PRDetailProps) {
   const [deleteBranchAfterMerge, setDeleteBranchAfterMerge] = useState(true);
   const [localIsMerging, setLocalIsMerging] = useState(false);
-  const [showMergeModal, setShowMergeModal] = useState(false);
 
   const isMerging = parentIsMerging || localIsMerging;
 
@@ -171,13 +169,15 @@ export function PRDetail({
                       <span>Merge & Ship</span>
                     </button>
                     {pr.htmlUrl && (
-                      <button
-                        onClick={() => setShowMergeModal(true)}
+                      <a
+                        href={pr.htmlUrl}
+                        target="_blank"
+                        rel="noopener noreferrer"
                         className="flex items-center space-x-3 bg-stone-800 hover:bg-stone-700 text-white px-8 py-4 rounded-2xl text-[11px] font-black uppercase tracking-widest transition-all duration-300 shadow-lg hover:shadow-stone-900/20"
                       >
                         <ExternalLink size={18} />
                         <span>View PR</span>
-                      </button>
+                      </a>
                     )}
                   </div>
                   <label className="flex items-center space-x-3 cursor-pointer group px-4 py-2 bg-white rounded-xl border border-stone-100 shadow-sm hover:border-rose-200 transition-colors">
@@ -251,16 +251,6 @@ export function PRDetail({
             </p>
           </div>
         </div>
-      )}
-
-      {/* Merge Modal */}
-      {pr.htmlUrl && (
-        <PRMergeModal
-          isOpen={showMergeModal}
-          onClose={() => setShowMergeModal(false)}
-          prUrl={pr.htmlUrl}
-          prNumber={pr.number}
-        />
       )}
     </div>
   );
