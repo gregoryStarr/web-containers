@@ -55,6 +55,91 @@ export class WebContainerManager {
     }
   }
 
+  async readFile(path: string): Promise<string | null> {
+    if (!this._container || !this.isBooted) {
+      return null;
+    }
+    try {
+      const content = await this._container.fs.readFile(path, 'utf-8');
+      return content;
+    } catch {
+      return null;
+    }
+  }
+
+  async hasTestScript(): Promise<boolean> {
+    const packageJsonContent = await this.readFile('package.json');
+    if (!packageJsonContent) {
+      return false;
+    }
+    try {
+      const pkg = JSON.parse(packageJsonContent);
+      return !!(pkg.scripts && pkg.scripts.test);
+    } catch {
+      return false;
+    }
+  }
+
+  async createBuildArtifact(
+    dirs: string[] = ['dist', 'build', 'out']
+  ): Promise<Blob | null> {
+    if (!this._container || !this.isBooted) {
+      return null;
+    }
+
+    // Find the first existing build directory
+    let buildDir = '';
+    for (const dir of dirs) {
+      try {
+        const files = await this._container.fs.readdir(dir);
+        if (files.length > 0) {
+          buildDir = dir;
+          break;
+        }
+      } catch {
+        // Directory doesn't exist, try next
+      }
+    }
+
+    if (!buildDir) {
+      this.logger?.(
+        `⚠️ No build directory found (checked: ${dirs.join(', ')})`
+      );
+      return null;
+    }
+
+    this.logger?.(`📦 Creating artifact from ${buildDir}...`);
+
+    try {
+      // Create a tar archive of the build directory
+      const tarCommand = `tar -czf /tmp/build.tar.gz ${buildDir}`;
+      const result = await this.executeCommand('sh', ['-c', tarCommand]);
+
+      if (!result.success) {
+        this.logger?.(`⚠️ Failed to create archive: ${result.stderr}`);
+        return null;
+      }
+
+      // Read the archive file
+      const archiveContent = await this.readFile('/tmp/build.tar.gz');
+      if (!archiveContent) {
+        return null;
+      }
+
+      // Convert base64 to blob
+      const binaryString = atob(archiveContent);
+      const bytes = new Uint8Array(binaryString.length);
+      for (let i = 0; i < binaryString.length; i++) {
+        bytes[i] = binaryString.charCodeAt(i);
+      }
+
+      return new Blob([bytes], { type: 'application/gzip' });
+    } catch (err) {
+      this.logger?.(`⚠️ Error creating artifact: ${err}`);
+      return null;
+    }
+  }
+
   async cleanFileSystem(): Promise<void> {
     if (!this._container || !this.isBooted) {
       throw new Error('Container is not booted');

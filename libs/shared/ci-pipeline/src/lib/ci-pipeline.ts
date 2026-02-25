@@ -159,11 +159,36 @@ export class CIPipelineOrchestrator {
           name: 'Run tests',
           command: options.testCommand || 'npm test',
           timeout: 900000,
+          required: true, // Will be skipped if no test script
         },
       ];
 
+      // Track if test stage should be skipped
+      let skipTestStage = false;
+      let hasTestScript = false;
+
       // 4. Run stages
       for (const { key, name, command, timeout } of stages) {
+        // Skip test stage if no test script exists
+        if (key === 'test' && skipTestStage) {
+          this.logger?.(
+            `\n[STAGE] Skipping: ${name} (no test script in package.json)`
+          );
+          results.push({
+            stage: key,
+            success: true,
+            result: {
+              success: true,
+              stdout: 'Skipped - no test script found in package.json',
+              stderr: '',
+              exitCode: 0,
+              duration: 0,
+            },
+            aborted: false,
+          });
+          continue;
+        }
+
         if (this.aborted) {
           results.push({
             stage: key,
@@ -260,6 +285,23 @@ export class CIPipelineOrchestrator {
 
         if (result.success) {
           this.logger?.(`[SUCCESS] Stage "${name}" completed successfully.`);
+
+          // After install, check if test script exists
+          if (key === 'install') {
+            try {
+              hasTestScript = await this.manager.hasTestScript();
+              if (!hasTestScript) {
+                skipTestStage = true;
+                this.logger?.(
+                  `[INFO] No test script found in package.json - test stage will be skipped`
+                );
+              }
+            } catch (err) {
+              this.logger?.(
+                `[WARNING] Could not check for test script: ${err}`
+              );
+            }
+          }
         } else {
           this.logger?.(
             `[FAILURE] Stage "${name}" failed with exit code ${result.exitCode}.`

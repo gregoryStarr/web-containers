@@ -11,6 +11,7 @@ import {
   Trash2,
   RefreshCw,
   ExternalLink,
+  Download,
 } from 'lucide-react';
 import { PR } from '../types';
 
@@ -39,8 +40,24 @@ export function PRDetail({
 }: PRDetailProps) {
   const [deleteBranchAfterMerge, setDeleteBranchAfterMerge] = useState(true);
   const [localIsMerging, setLocalIsMerging] = useState(false);
+  const [exportType, setExportType] = useState<'unsigned' | 'signed'>(
+    'unsigned'
+  );
+  const [isExporting, setIsExporting] = useState(false);
 
   const isMerging = parentIsMerging || localIsMerging;
+
+  const handleExportArtifact = async () => {
+    // This will be implemented via a callback prop
+    // For now, just log - actual implementation needs orchestrator access
+    setIsExporting(true);
+    try {
+      // TODO: Call orchestrator to create and download artifact
+      console.log('Exporting artifact as:', exportType);
+    } finally {
+      setIsExporting(false);
+    }
+  };
 
   const handleMerge = async () => {
     if (!onMerge) return;
@@ -179,6 +196,50 @@ export function PRDetail({
                         <span>View PR</span>
                       </a>
                     )}
+                    {/* Export Artifact Button */}
+                    <div className="flex items-center gap-3">
+                      <button
+                        onClick={handleExportArtifact}
+                        disabled={isExporting}
+                        className="flex items-center space-x-3 bg-stone-700 hover:bg-stone-600 disabled:opacity-50 text-white px-6 py-4 rounded-2xl text-[11px] font-black uppercase tracking-widest transition-all duration-300 shadow-lg hover:shadow-stone-900/20"
+                      >
+                        {isExporting ? (
+                          <RefreshCw className="animate-spin" size={18} />
+                        ) : (
+                          <Download size={18} />
+                        )}
+                        <span>Export</span>
+                      </button>
+                      <div className="flex items-center gap-2 bg-stone-800 px-3 py-2 rounded-xl">
+                        <label className="flex items-center gap-1.5 cursor-pointer">
+                          <input
+                            type="radio"
+                            name={`export-${pr.id}`}
+                            value="unsigned"
+                            checked={exportType === 'unsigned'}
+                            onChange={() => setExportType('unsigned')}
+                            className="accent-orange-500"
+                          />
+                          <span className="text-[10px] font-bold text-stone-300 uppercase">
+                            Unsigned
+                          </span>
+                        </label>
+                        <span className="text-stone-500">|</span>
+                        <label className="flex items-center gap-1.5 cursor-pointer">
+                          <input
+                            type="radio"
+                            name={`export-${pr.id}`}
+                            value="signed"
+                            checked={exportType === 'signed'}
+                            onChange={() => setExportType('signed')}
+                            className="accent-orange-500"
+                          />
+                          <span className="text-[10px] font-bold text-stone-300 uppercase">
+                            Signed
+                          </span>
+                        </label>
+                      </div>
+                    </div>
                   </div>
                   <label className="flex items-center space-x-3 cursor-pointer group px-4 py-2 bg-white rounded-xl border border-stone-100 shadow-sm hover:border-rose-200 transition-colors">
                     <div className="relative flex items-center">
