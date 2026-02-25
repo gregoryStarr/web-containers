@@ -10,7 +10,7 @@
   
   No servers. No infrastructure. No costs. Just pure browser-based continuous integration.
 
-[Live Demo](https://webcontainers.fly.dev) · [Documentation](apps/browser-ci-pipeline/ARCHITECTURE.md) · [Report Bug](https://github.com/gregoryStarr/web-containers/issues)
+[Live Demo](https://browser-ci-pipeline-demo.fly.dev) · [Documentation](apps/browser-ci-pipeline/ARCHITECTURE.md) · [Report Bug](https://github.com/gregoryStarr/web-containers/issues)
 
 </div>
 
@@ -41,7 +41,7 @@ Traditional CI/CD requires servers, infrastructure, and money. **Browser CI** ch
 
 The easiest way to try Browser CI:
 
-1. **Visit** [https://webcontainers.fly.dev](https://webcontainers.fly.dev)
+1. **Visit** [https://browser-ci-pipeline-demo.fly.dev](https://browser-ci-pipeline-demo.fly.dev)
 2. **Enter your GitHub Personal Access Token** (with `repo` scope)
 3. **Enter an owner** (username or organization)
 4. **Click Fetch** to load repositories

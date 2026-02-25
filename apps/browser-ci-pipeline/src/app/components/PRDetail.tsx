@@ -115,7 +115,14 @@ export function PRDetail({
             <div className="pt-6 border-t border-stone-100 flex flex-wrap items-center justify-between gap-4">
               <div className="flex flex-wrap gap-4">
                 <button
-                  onClick={() => onRunCI(pr)}
+                  onClick={() => {
+                    // @ts-expect-error - Umami is loaded via script tag
+                    if (window.umami) {
+                      // @ts-expect-error - Umami is loaded via script tag
+                      window.umami.track('run-ci-pipeline');
+                    }
+                    onRunCI(pr);
+                  }}
                   disabled={isRunning || isMerging}
                   className="flex items-center space-x-3 bg-stone-900 hover:bg-stone-800 disabled:opacity-50 text-white px-8 py-4 rounded-2xl text-[11px] font-black uppercase tracking-widest transition-all duration-300 shadow-xl hover:shadow-stone-900/20 hover:-translate-y-0.5 active:scale-95"
                 >

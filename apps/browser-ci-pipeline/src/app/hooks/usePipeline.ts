@@ -47,22 +47,52 @@ export function usePipeline(
       setSelectedPR((prev) => (prev ? { ...prev, status: 'running' } : null));
 
       try {
-        await orchestrator.runPipeline(pr.number, {
+        const results = await orchestrator.runPipeline(pr.number, {
           installCommand: `${pipelineSettings.packageManager} install`,
           buildCommand: pipelineSettings.buildCommand,
           testCommand: `${pipelineSettings.packageManager} test`,
         });
 
-        setPrs((prev) =>
-          prev.map((p) =>
-            p.id === pr.id
-              ? { ...p, status: 'success', lastRun: new Date() }
-              : p
-          )
-        );
-        setSelectedPR((prev) =>
-          prev ? { ...prev, status: 'success', lastRun: new Date() } : null
-        );
+        // runPipeline returns results but never throws on stage failure
+        // Check the actual results to determine success/failure
+        const failedStage = results.find((r) => !r.success);
+
+        if (failedStage) {
+          const failureMessage = `Stage "${failedStage.stage}" failed with exit code ${failedStage.result.exitCode}`;
+          setPrs((prev) =>
+            prev.map((p) =>
+              p.id === pr.id
+                ? {
+                    ...p,
+                    status: 'failure',
+                    lastRun: new Date(),
+                    failureReason: failureMessage,
+                  }
+                : p
+            )
+          );
+          setSelectedPR((prev) =>
+            prev
+              ? {
+                  ...prev,
+                  status: 'failure',
+                  lastRun: new Date(),
+                  failureReason: failureMessage,
+                }
+              : null
+          );
+        } else {
+          setPrs((prev) =>
+            prev.map((p) =>
+              p.id === pr.id
+                ? { ...p, status: 'success', lastRun: new Date() }
+                : p
+            )
+          );
+          setSelectedPR((prev) =>
+            prev ? { ...prev, status: 'success', lastRun: new Date() } : null
+          );
+        }
       } catch (error: any) {
         setPrs((prev) =>
           prev.map((p) =>
