@@ -3,6 +3,7 @@
   "version": "0.0.0",
   "license": "MIT",
   "scripts": {
+    "preinstall":"npm i  tar",
     "build":"nx run -t build browser-ci-pipeline",
     "build:no-nx":"vite build --config apps/browser-ci-pipeline/vite.config.ts",
     "dev":"nx run -t dev browser-ci-pipeline",

@@ -111,31 +111,104 @@ export class WebContainerManager {
     this.logger?.(`📦 Creating artifact from ${buildDir}...`);
 
     try {
-      // Create a tar archive of the build directory
-      const tarCommand = `tar -czf /tmp/build.tar.gz ${buildDir}`;
-      const result = await this.executeCommand('sh', ['-c', tarCommand]);
+      // First, install archiver for proper zip creation
+      const installResult = await this.executeCommand(
+        'npm',
+        ['install', 'archiver', '--save-dev'],
+        undefined,
+        () => {}
+      );
 
-      if (!result.success) {
-        this.logger?.(`⚠️ Failed to create archive: ${result.stderr}`);
-        return null;
+      if (!installResult.success) {
+        this.logger?.(`⚠️ Failed to install archiver: ${installResult.stderr}`);
+        return await this.createSimpleJsonArtifact(buildDir);
       }
 
-      // Read the archive file
-      const archiveContent = await this.readFile('/tmp/build.tar.gz');
-      if (!archiveContent) {
-        return null;
+      // Create zip using node
+      const zipCommand = `node -e "
+        const archiver = require('archiver');
+        const fs = require('fs');
+        const output = fs.createWriteStream('/tmp/build.zip');
+        const archive = archiver('zip', { zlib: { level: 9 } });
+        
+        output.on('close', () => process.exit(0));
+        archive.on('error', (err) => { console.error(err); process.exit(1); });
+        
+        archive.pipe(output);
+        archive.directory('${buildDir}', false);
+        archive.finalize();
+      "`;
+
+      const zipResult = await this.executeCommand('sh', ['-c', zipCommand]);
+
+      if (zipResult.success) {
+        // Read the zip file
+        const zipContent = await this._container.fs.readFile('/tmp/build.zip');
+
+        if (!zipContent) {
+          return await this.createSimpleJsonArtifact(buildDir);
+        }
+
+        // Convert to Uint8Array
+        const bytes =
+          zipContent instanceof Uint8Array
+            ? zipContent
+            : new Uint8Array(zipContent);
+        this.logger?.(`✅ Zip artifact created (${bytes.length} bytes)`);
+        return new Blob([bytes], { type: 'application/zip' });
       }
 
-      // Convert base64 to blob
-      const binaryString = atob(archiveContent);
-      const bytes = new Uint8Array(binaryString.length);
-      for (let i = 0; i < binaryString.length; i++) {
-        bytes[i] = binaryString.charCodeAt(i);
-      }
-
-      return new Blob([bytes], { type: 'application/gzip' });
+      this.logger?.(`⚠️ Zip creation failed: ${zipResult.stderr}`);
+      return await this.createSimpleJsonArtifact(buildDir);
     } catch (err) {
       this.logger?.(`⚠️ Error creating artifact: ${err}`);
+      return await this.createSimpleJsonArtifact(buildDir);
+    }
+  }
+
+  // Fallback: create a JSON manifest with file contents
+  async createSimpleJsonArtifact(buildDir: string): Promise<Blob | null> {
+    if (!this._container || !this.isBooted) {
+      return null;
+    }
+
+    try {
+      this.logger?.(`📦 Creating JSON artifact (fallback)...`);
+
+      const files: Record<string, string> = {};
+
+      const readDirRecursive = async (dir: string, basePath: string = '') => {
+        if (!this._container?.fs) return;
+
+        try {
+          const entries = await this._container.fs.readdir(dir);
+          for (const entry of entries) {
+            const fullPath = basePath ? `${basePath}/${entry}` : entry;
+            try {
+              const content = await this._container.fs.readFile(
+                `${dir}/${entry}`,
+                'utf-8'
+              );
+              files[fullPath] = content;
+            } catch {
+              // It's a directory, recurse
+              await readDirRecursive(`${dir}/${entry}`, fullPath);
+            }
+          }
+        } catch (e) {
+          // Ignore errors
+        }
+      };
+
+      await readDirRecursive(buildDir);
+
+      const manifest = JSON.stringify(files, null, 2);
+      this.logger?.(
+        `✅ JSON artifact created with ${Object.keys(files).length} files`
+      );
+      return new Blob([manifest], { type: 'application/json' });
+    } catch (err) {
+      this.logger?.(`⚠️ Fallback also failed: ${err}`);
       return null;
     }
   }

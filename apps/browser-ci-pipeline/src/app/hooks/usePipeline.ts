@@ -54,6 +54,10 @@ export function usePipeline(
         if (artifact) {
           // Create download link
           const url = URL.createObjectURL(artifact);
+          setLogs((prev) => [
+            ...prev,
+            `[EXPORT] CREATING OBJ URL`,
+          ]);
           const a = document.createElement('a');
           a.href = url;
           a.download = `build-${
@@ -63,10 +67,13 @@ export function usePipeline(
           a.click();
           document.body.removeChild(a);
           URL.revokeObjectURL(url);
-
           setLogs((prev) => [
             ...prev,
-            `[EXPORT] Artifact downloaded successfully!`,
+            `[EXPORT] CREATING OBJ URL`,
+          ]);
+          setLogs((prev) => [
+            ...prev,
+            `[EXPORT] ARTIFQACT URL: ${url}!`,
           ]);
         } else {
           setLogs((prev) => [
