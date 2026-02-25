@@ -36,6 +36,7 @@ export function usePRs(
         id: pr.number.toString(),
         number: pr.number,
         title: pr.title,
+        htmlUrl: pr.html_url,
         status: 'idle',
         head: pr.head,
       }));

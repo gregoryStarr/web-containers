@@ -7,6 +7,7 @@ export interface PR {
   id: string;
   number: number;
   title: string;
+  htmlUrl?: string;
   status: 'idle' | 'running' | 'success' | 'failure';
   lastRun?: Date;
   failureReason?: string;
