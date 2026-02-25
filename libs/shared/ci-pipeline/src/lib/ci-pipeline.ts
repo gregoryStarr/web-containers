@@ -10,6 +10,14 @@
 import { WebContainerManager, CommandResult } from '@org/webcontainer-manager';
 import { GitHubIntegrationService } from '@org/github-integration';
 
+/**
+ * Strips ANSI escape codes from string (npm colors, etc)
+ */
+function stripAnsi(str: string): string {
+  // eslint-disable-next-line no-control-regex
+  return str.replace(/\x1B(?:[@-Z\\-_]|\[[0-?]*[ -/]*[@-~])/g, '');
+}
+
 export interface PipelineStage {
   name: string;
   command: string;
@@ -67,8 +75,14 @@ export class CIPipelineOrchestrator {
   }
 
   private log(category: LogCategory, message: string) {
+    // Strip ANSI codes from npm/command output before logging
+    const cleanMessage = stripAnsi(message);
     // Always log command output for debugging - don't require verbose mode
-    this.logger?.(`[${category}] ${message}`);
+    this.logger?.(`[${category}] ${cleanMessage}`);
+  }
+
+  private clean(message: string): string {
+    return stripAnsi(message);
   }
 
   async runPipeline(
@@ -197,22 +211,26 @@ export class CIPipelineOrchestrator {
               const lines = data.split('\n');
               for (const line of lines) {
                 if (!line.trim()) continue;
+                const cleanLine = this.clean(line);
 
                 // Identify test results and starts
-                if (line.includes('PASS') || line.includes('✓')) {
-                  this.logger?.(`[TESTS] [PASS] ${line.trim()}`);
-                } else if (line.includes('FAIL') || line.includes('✕')) {
-                  this.logger?.(`[TESTS] [FAIL] ${line.trim()}`);
-                } else if (line.includes('RUNS')) {
-                  this.logger?.(`[TESTS] [RUNNING] ${line.trim()}`);
+                if (cleanLine.includes('PASS') || cleanLine.includes('✓')) {
+                  this.logger?.(`[TESTS] [PASS] ${cleanLine.trim()}`);
                 } else if (
-                  line.includes('Test Suites') ||
-                  line.includes('Tests:')
+                  cleanLine.includes('FAIL') ||
+                  cleanLine.includes('✕')
                 ) {
-                  this.logger?.(`[TESTS] [SUMMARY] ${line.trim()}`);
+                  this.logger?.(`[TESTS] [FAIL] ${cleanLine.trim()}`);
+                } else if (cleanLine.includes('RUNS')) {
+                  this.logger?.(`[TESTS] [RUNNING] ${cleanLine.trim()}`);
+                } else if (
+                  cleanLine.includes('Test Suites') ||
+                  cleanLine.includes('Tests:')
+                ) {
+                  this.logger?.(`[TESTS] [SUMMARY] ${cleanLine.trim()}`);
                 } else {
                   // General test output
-                  this.logger?.(`[TESTS] ${line.trim()}`);
+                  this.logger?.(`[TESTS] ${cleanLine.trim()}`);
                 }
               }
             }
