@@ -22,6 +22,8 @@ interface PRDetailProps {
   onMerge?: (pr: PR, deleteBranch: boolean) => Promise<void>;
   onMergeAndDeploy?: (pr: PR, deleteBranch: boolean) => Promise<void>;
   isRunning: boolean;
+  isExporting: boolean;
+  onExportArtifact?: (signed: boolean) => Promise<void>;
   isMerging: boolean;
   mergeError: string | null;
   onClearMergeError: () => void;
@@ -34,6 +36,8 @@ export function PRDetail({
   onMerge,
   onMergeAndDeploy,
   isRunning,
+  isExporting,
+  onExportArtifact,
   isMerging: parentIsMerging,
   mergeError,
   onClearMergeError,
@@ -43,19 +47,12 @@ export function PRDetail({
   const [exportType, setExportType] = useState<'unsigned' | 'signed'>(
     'unsigned'
   );
-  const [isExporting, setIsExporting] = useState(false);
 
   const isMerging = parentIsMerging || localIsMerging;
 
   const handleExportArtifact = async () => {
-    // This will be implemented via a callback prop
-    // For now, just log - actual implementation needs orchestrator access
-    setIsExporting(true);
-    try {
-      // TODO: Call orchestrator to create and download artifact
-      console.log('Exporting artifact as:', exportType);
-    } finally {
-      setIsExporting(false);
+    if (onExportArtifact) {
+      await onExportArtifact(exportType === 'signed');
     }
   };
 

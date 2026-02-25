@@ -370,4 +370,30 @@ export class CIPipelineOrchestrator {
   isAborted(): boolean {
     return this.aborted;
   }
+
+  async exportBuildArtifact(signed: boolean = false): Promise<Blob | null> {
+    if (!this.manager) {
+      return null;
+    }
+
+    this.logger?.(
+      `[EXPORT] Creating ${signed ? 'signed' : 'unsigned'} build artifact...`
+    );
+
+    const artifact = await this.manager.createBuildArtifact();
+
+    if (!artifact) {
+      this.logger?.(`[EXPORT] No build artifact found. Run build first.`);
+      return null;
+    }
+
+    // For signed, we'd need additional processing (not implemented yet)
+    if (signed) {
+      this.logger?.(
+        `[EXPORT] Signing not yet implemented, downloading unsigned artifact`
+      );
+    }
+
+    return artifact;
+  }
 }

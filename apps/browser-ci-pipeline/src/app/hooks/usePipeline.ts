@@ -11,10 +11,12 @@ import type { PR, AppStatus, PipelineSettings } from '../types';
 
 interface UsePipelineReturn {
   isRunning: boolean;
+  isExporting: boolean;
   isMerging: boolean;
   mergeError: string | null;
   setMergeError: React.Dispatch<React.SetStateAction<string | null>>;
   handleRunCI: (pr: PR) => Promise<void>;
+  handleExportArtifact: (signed: boolean) => Promise<void>;
   handleMergePR: (pr: PR, deleteBranch: boolean) => Promise<void>;
 }
 
@@ -30,8 +32,56 @@ export function usePipeline(
   fetchPRs: () => Promise<void>
 ): UsePipelineReturn {
   const [isRunning, setIsRunning] = useState(false);
+  const [isExporting, setIsExporting] = useState(false);
   const [isMerging, setIsMerging] = useState(false);
   const [mergeError, setMergeError] = useState<string | null>(null);
+
+  const handleExportArtifact = useCallback(
+    async (signed: boolean) => {
+      if (!orchestrator || isExporting || isRunning) return;
+
+      setIsExporting(true);
+      setLogs((prev) => [
+        ...prev,
+        `[EXPORT] Starting artifact export (${
+          signed ? 'signed' : 'unsigned'
+        })...`,
+      ]);
+
+      try {
+        const artifact = await orchestrator.exportBuildArtifact(signed);
+
+        if (artifact) {
+          // Create download link
+          const url = URL.createObjectURL(artifact);
+          const a = document.createElement('a');
+          a.href = url;
+          a.download = `build-${
+            signed ? 'signed' : 'unsigned'
+          }-${Date.now()}.tar.gz`;
+          document.body.appendChild(a);
+          a.click();
+          document.body.removeChild(a);
+          URL.revokeObjectURL(url);
+
+          setLogs((prev) => [
+            ...prev,
+            `[EXPORT] Artifact downloaded successfully!`,
+          ]);
+        } else {
+          setLogs((prev) => [
+            ...prev,
+            `[EXPORT] Failed to create artifact. Make sure build has run successfully.`,
+          ]);
+        }
+      } catch (error: any) {
+        setLogs((prev) => [...prev, `[EXPORT] Error: ${error.message}`]);
+      } finally {
+        setIsExporting(false);
+      }
+    },
+    [orchestrator, isExporting, isRunning, setLogs]
+  );
 
   const handleRunCI = useCallback(
     async (pr: PR) => {
@@ -163,10 +213,12 @@ export function usePipeline(
 
   return {
     isRunning,
+    isExporting,
     isMerging,
     mergeError,
     setMergeError,
     handleRunCI,
+    handleExportArtifact,
     handleMergePR,
   };
 }

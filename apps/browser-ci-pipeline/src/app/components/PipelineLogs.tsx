@@ -14,12 +14,14 @@ import {
   Hammer,
   FlaskConical,
   Terminal as TerminalIcon,
+  Download,
 } from 'lucide-react';
 
 interface PipelineLogsProps {
   logs: string[];
   isVisible: boolean;
   currentStage?: string;
+  isExporting?: boolean;
 }
 
 const CATEGORIES = [
@@ -30,6 +32,7 @@ const CATEGORIES = [
   'FILESYSTEM',
   'NETWORK',
   'INTERNAL',
+  'EXPORT',
 ];
 
 // High-tech Orange theme color: #FF6B00 -> H: 25, S: 100%, L: 50%
@@ -52,6 +55,7 @@ export function PipelineLogs({
   logs,
   isVisible,
   currentStage,
+  isExporting,
 }: PipelineLogsProps) {
   const [activeFilters, setActiveFilters] = useState<string[]>([]);
   const scrollRef = useRef<HTMLDivElement>(null);
@@ -96,6 +100,14 @@ export function PipelineLogs({
           {currentStage && (
             <div className="flex items-center space-x-2 bg-orange-900/30 px-3 py-1.5 rounded-full border border-orange-800/50">
               <RefreshCw size={12} className="animate-spin text-orange-400" />
+            </div>
+          )}
+          {isExporting && !currentStage && (
+            <div className="flex items-center space-x-2 bg-blue-900/30 px-3 py-1.5 rounded-full border border-blue-800/50">
+              <Download size={12} className="animate-bounce text-blue-400" />
+              <span className="text-[10px] font-bold text-blue-400 uppercase">
+                Exporting...
+              </span>
             </div>
           )}
         </div>
@@ -170,6 +182,8 @@ export function PipelineLogs({
                 Icon = FlaskConical;
               } else if (log.includes('[STAGE] Starting Stage:')) {
                 Icon = FastForward;
+              } else if (log.includes('[EXPORT]')) {
+                Icon = Download;
               }
 
               const bgClass = getBackgroundClass(i);
@@ -195,7 +209,7 @@ export function PipelineLogs({
                     className={`flex-1 min-w-0 ${textClass} break-words whitespace-pre-wrap pt-0.5 font-medium tracking-tight`}
                   >
                     {log.replace(
-                      /\[(SUCCESS|FAILURE|CRITICAL|WARNING|COMMANDS|INTERNAL|NETWORK|GitHub|INSTALL|BUILD|TESTS|STAGE)\]\s*(\[(PASS|FAIL|RUNNING|SUMMARY)\]\s*)?/,
+                      /\[(SUCCESS|FAILURE|CRITICAL|WARNING|COMMANDS|INTERNAL|NETWORK|GitHub|INSTALL|BUILD|TESTS|STAGE|EXPORT)\]\s*(\[(PASS|FAIL|RUNNING|SUMMARY)\]\s*)?/,
                       ''
                     )}
                   </div>

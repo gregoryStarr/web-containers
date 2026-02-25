@@ -76,10 +76,12 @@ export default function App() {
 
   const {
     isRunning,
+    isExporting,
     isMerging,
     mergeError,
     setMergeError,
     handleRunCI,
+    handleExportArtifact,
     handleMergePR,
   } = usePipeline(
     services.orchestrator,
@@ -206,6 +208,8 @@ export default function App() {
                   onRunCI={handleRunCI}
                   onMerge={handleMergePR}
                   isRunning={isRunning}
+                  isExporting={isExporting}
+                  onExportArtifact={handleExportArtifact}
                   isMerging={isMerging}
                   mergeError={mergeError}
                   onClearMergeError={() => setMergeError(null)}
@@ -234,6 +238,7 @@ export default function App() {
             logs={logs}
             isVisible={true}
             currentStage={isRunning ? currentStage : undefined}
+            isExporting={isExporting}
           />
         </aside>
       </main>
