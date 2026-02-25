@@ -10,7 +10,7 @@
  * @license BSL-1.1
  */
 
-import { useState } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { PRList } from './components/PRList';
 import { PRDetail } from './components/PRDetail';
 import { SettingsPanel } from './components/SettingsPanel';
@@ -93,19 +93,62 @@ export default function App() {
     fetchPRs
   );
 
-  // Handlers
+  // Debounced owner/repo state
+  const [debouncedOwner, setDebouncedOwner] = useState('');
+  const [debouncedRepo, setDebouncedRepo] = useState('');
+  const ownerTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+  const repoTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+
+  // Debounce owner changes to avoid excessive API calls
+  useEffect(() => {
+    if (ownerTimeoutRef.current) {
+      clearTimeout(ownerTimeoutRef.current);
+    }
+    ownerTimeoutRef.current = setTimeout(() => {
+      setDebouncedOwner(gitOwner);
+    }, 500);
+    return () => {
+      if (ownerTimeoutRef.current) {
+        clearTimeout(ownerTimeoutRef.current);
+      }
+    };
+  }, [gitOwner]);
+
+  // Debounce repo changes
+  useEffect(() => {
+    if (repoTimeoutRef.current) {
+      clearTimeout(repoTimeoutRef.current);
+    }
+    repoTimeoutRef.current = setTimeout(() => {
+      setDebouncedRepo(gitRepo);
+    }, 500);
+    return () => {
+      if (repoTimeoutRef.current) {
+        clearTimeout(repoTimeoutRef.current);
+      }
+    };
+  }, [gitRepo]);
+
+  // Update githubConfig with debounced values
+  useEffect(() => {
+    setGithubConfig((prev) => ({
+      ...prev,
+      owner: debouncedOwner,
+      repo: debouncedRepo,
+    }));
+  }, [debouncedOwner, debouncedRepo]);
+
+  // Handlers - these update local state immediately for responsive UI
   const handleTokenChange = (value: string) => {
     setGithubConfig((prev) => ({ ...prev, token: value }));
   };
 
   const handleOwnerChange = (value: string) => {
     setGitOwner(value);
-    setGithubConfig((prev) => ({ ...prev, owner: value }));
   };
 
   const handleRepoChange = (value: string) => {
     setGitRepo(value);
-    setGithubConfig((prev) => ({ ...prev, repo: value }));
   };
 
   const handleSettingsChange = (settings: {
