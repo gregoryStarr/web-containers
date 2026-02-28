@@ -80,6 +80,19 @@ export class WebContainerManager {
     }
   }
 
+  async hasBuildScript(): Promise<boolean> {
+    const packageJsonContent = await this.readFile('package.json');
+    if (!packageJsonContent) {
+      return false;
+    }
+    try {
+      const pkg = JSON.parse(packageJsonContent);
+      return !!(pkg.scripts && pkg.scripts.build);
+    } catch {
+      return false;
+    }
+  }
+
   async createBuildArtifact(
     dirs: string[] = ['dist', 'build', 'out']
   ): Promise<Blob | null> {

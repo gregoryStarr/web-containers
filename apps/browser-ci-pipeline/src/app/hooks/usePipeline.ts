@@ -8,6 +8,7 @@
 import { useState, useCallback } from 'react';
 import type { CIPipelineOrchestrator } from '@org/ci-pipeline';
 import type { PR, AppStatus, PipelineSettings } from '../types';
+import { trackEvent, AnalyticsEvents } from '../utils/analytics';
 
 interface UsePipelineReturn {
   isRunning: boolean;
@@ -54,10 +55,14 @@ export function usePipeline(
         if (artifact) {
           // Create download link
           const url = URL.createObjectURL(artifact);
-          setLogs((prev) => [
-            ...prev,
-            `[EXPORT] CREATING OBJ URL`,
-          ]);
+
+          // Track artifact export
+          trackEvent(AnalyticsEvents.ARTIFACT_EXPORTED, {
+            signed,
+            fileType: 'tar.gz',
+          });
+
+          setLogs((prev) => [...prev, `[EXPORT] CREATING OBJ URL`]);
           const a = document.createElement('a');
           a.href = url;
           a.download = `build-${
@@ -67,14 +72,8 @@ export function usePipeline(
           a.click();
           document.body.removeChild(a);
           URL.revokeObjectURL(url);
-          setLogs((prev) => [
-            ...prev,
-            `[EXPORT] CREATING OBJ URL`,
-          ]);
-          setLogs((prev) => [
-            ...prev,
-            `[EXPORT] ARTIFQACT URL: ${url}!`,
-          ]);
+          setLogs((prev) => [...prev, `[EXPORT] CREATING OBJ URL`]);
+          setLogs((prev) => [...prev, `[EXPORT] ARTIFQACT URL: ${url}!`]);
         } else {
           setLogs((prev) => [
             ...prev,
@@ -98,6 +97,12 @@ export function usePipeline(
       setStatus('busy');
       setLogs([]);
 
+      // Track pipeline start
+      trackEvent(AnalyticsEvents.PIPELINE_STARTED, {
+        prNumber: pr.number,
+        branch: pr.head?.ref,
+      });
+
       setPrs((prev) =>
         prev.map((p) => (p.id === pr.id ? { ...p, status: 'running' } : p))
       );
@@ -116,6 +121,15 @@ export function usePipeline(
 
         if (failedStage) {
           const failureMessage = `Stage "${failedStage.stage}" failed with exit code ${failedStage.result.exitCode}`;
+
+          // Track pipeline failure
+          trackEvent(AnalyticsEvents.PIPELINE_FAILURE, {
+            prNumber: pr.number,
+            branch: pr.head?.ref,
+            failedStage: failedStage.stage,
+            exitCode: failedStage.result.exitCode,
+          });
+
           setPrs((prev) =>
             prev.map((p) =>
               p.id === pr.id
@@ -139,6 +153,12 @@ export function usePipeline(
               : null
           );
         } else {
+          // Track pipeline success
+          trackEvent(AnalyticsEvents.PIPELINE_SUCCESS, {
+            prNumber: pr.number,
+            branch: pr.head?.ref,
+          });
+
           setPrs((prev) =>
             prev.map((p) =>
               p.id === pr.id
@@ -201,6 +221,14 @@ export function usePipeline(
           pr.number,
           `Merge pull request #${pr.number} from ${pr.head?.ref}`
         );
+
+        // Track PR merge
+        trackEvent(AnalyticsEvents.PR_MERGED, {
+          prNumber: pr.number,
+          branch: pr.head?.ref,
+          branchDeleted: deleteBranch && !!pr.head?.ref,
+        });
+
         if (deleteBranch && pr.head?.ref) {
           await services.github.deleteBranch(pr.head.ref);
         }

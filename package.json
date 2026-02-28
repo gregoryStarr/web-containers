@@ -3,13 +3,13 @@
   "version": "0.0.0",
   "license": "MIT",
   "scripts": {
-    "preinstall":"npm i  tar",
-    "build":"nx run -t build browser-ci-pipeline",
-    "build:no-nx":"vite build --config apps/browser-ci-pipeline/vite.config.ts",
-    "dev":"nx run -t dev browser-ci-pipeline",
-    "dev:no-nx":"vite --config apps/browser-ci-pipeline/vite.config.ts",
-    "test":"nx run -t test browser-ci-pipeline",
-    "test:no-nx":"vitest --config apps/browser-ci-pipeline/vitest.config.ts"
+    "preinstall": "npm i  tar",
+    "build": "nx run -t build browser-ci-pipeline",
+    "build:no-nx": "vite build --config apps/browser-ci-pipeline/vite.config.ts",
+    "dev": "nx run -t dev browser-ci-pipeline",
+    "dev:no-nx": "vite --config apps/browser-ci-pipeline/vite.config.ts",
+    "test": "nx run -t test browser-ci-pipeline",
+    "test:no-nx": "vitest --config apps/browser-ci-pipeline/vitest.config.ts"
   },
   "private": true,
   "dependencies": {
@@ -57,6 +57,7 @@
     "@vitest/coverage-v8": "4.0.9",
     "@vitest/ui": "4.0.9",
     "@webcontainer/api": "^1.6.1",
+    "chromatic": "^15.2.0",
     "esbuild": "^0.27.3",
     "eslint": "^9.8.0",
     "eslint-config-prettier": "^10.0.0",

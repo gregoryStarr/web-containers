@@ -21,6 +21,7 @@ import { AppFooter } from './components/layout/AppFooter';
 import { SourceControlForm, AboutModal, HowToUseModal } from './components';
 import { useGitHubConfig, useServices, usePRs, usePipeline } from './hooks';
 import type { PipelineSettings, PR } from './types';
+import { trackEvent, AnalyticsEvents } from './utils/analytics';
 
 export default function App() {
   // UI State
@@ -144,6 +145,28 @@ export default function App() {
   const handleTokenChange = (value: string) => {
     setGithubConfig((prev) => ({ ...prev, token: value }));
   };
+
+  // Track app loaded
+  useEffect(() => {
+    trackEvent(AnalyticsEvents.APP_LOADED);
+  }, []);
+
+  // Track GitHub connection when token is set
+  useEffect(() => {
+    if (githubConfig.token) {
+      trackEvent(AnalyticsEvents.GITHUB_CONNECTED);
+    }
+  }, [githubConfig.token]);
+
+  // Track PR selection
+  useEffect(() => {
+    if (selectedPR) {
+      trackEvent(AnalyticsEvents.PR_SELECTED, {
+        prNumber: selectedPR.number,
+        branch: selectedPR.head?.ref,
+      });
+    }
+  }, [selectedPR]);
 
   const handleOwnerChange = (value: string) => {
     setGitOwner(value);

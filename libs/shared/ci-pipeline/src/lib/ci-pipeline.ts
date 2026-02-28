@@ -163,25 +163,48 @@ export class CIPipelineOrchestrator {
         },
       ];
 
-      // Track if test stage should be skipped
+      // Track if test/build stage should be skipped
       let skipTestStage = false;
+      let skipBuildStage = false;
       let hasTestScript = false;
+      let hasBuildScript = false;
 
       // 4. Run stages
       for (const { key, name, command, timeout } of stages) {
-        // Skip test stage if no test script exists
+        // Skip build stage if no build script exists - mark as FAILED
+        if (key === 'build' && skipBuildStage) {
+          this.logger?.(
+            `\n[STAGE] Skipping: ${name} (no build script in package.json)`
+          );
+          results.push({
+            stage: key,
+            success: false,
+            result: {
+              success: false,
+              stdout: '',
+              stderr: 'Skipped - no build script found in package.json',
+              exitCode: 1,
+              duration: 0,
+            },
+            aborted: false,
+          });
+          // Don't abort - continue to test stage
+          continue;
+        }
+
+        // Skip test stage if no test script exists - mark as FAILED
         if (key === 'test' && skipTestStage) {
           this.logger?.(
             `\n[STAGE] Skipping: ${name} (no test script in package.json)`
           );
           results.push({
             stage: key,
-            success: true,
+            success: false,
             result: {
-              success: true,
-              stdout: 'Skipped - no test script found in package.json',
-              stderr: '',
-              exitCode: 0,
+              success: false,
+              stdout: '',
+              stderr: 'Skipped - no test script found in package.json',
+              exitCode: 1,
               duration: 0,
             },
             aborted: false,
@@ -286,7 +309,7 @@ export class CIPipelineOrchestrator {
         if (result.success) {
           this.logger?.(`[SUCCESS] Stage "${name}" completed successfully.`);
 
-          // After install, check if test script exists
+          // After install, check if test/build scripts exist
           if (key === 'install') {
             try {
               hasTestScript = await this.manager.hasTestScript();
@@ -299,6 +322,20 @@ export class CIPipelineOrchestrator {
             } catch (err) {
               this.logger?.(
                 `[WARNING] Could not check for test script: ${err}`
+              );
+            }
+
+            try {
+              hasBuildScript = await this.manager.hasBuildScript();
+              if (!hasBuildScript) {
+                skipBuildStage = true;
+                this.logger?.(
+                  `[INFO] No build script found in package.json - build stage will be skipped`
+                );
+              }
+            } catch (err) {
+              this.logger?.(
+                `[WARNING] Could not check for build script: ${err}`
               );
             }
           }

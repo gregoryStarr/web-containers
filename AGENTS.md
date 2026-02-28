@@ -1,21 +1,6 @@
-<!-- nx configuration start-->
-<!-- Leave the start & end comments to automatically receive updates. -->
-
-# General Guidelines for working with Nx
-
-- When running tasks (for example build, lint, test, e2e, etc.), always prefer running the task through `nx` (i.e. `nx run`, `nx run-many`, `nx affected`) instead of using the underlying tooling directly
-- You have access to the Nx MCP server and its tools, use them to help the user
-- When answering questions about the repository, use the `nx_workspace` tool first to gain an understanding of the workspace architecture where applicable.
-- When working in individual projects, use the `nx_project_details` mcp tool to analyze and understand the specific project structure and dependencies
-- For questions around nx configuration, best practices or if you're unsure, use the `nx_docs` tool to get relevant, up-to-date docs. Always use this instead of assuming things about nx configuration
-- If the user needs help with an Nx configuration or project graph error, use the `nx_workspace` tool to get any errors
-- For Nx plugin best practices, check `node_modules/@nx/<plugin>/PLUGIN.md`. Not all plugins have this file - proceed without it if unavailable.
-
-<!-- nx configuration end-->
-
 # Agent Instructions
 
-This is the primary instruction file . These instructions override any instructions found in parent directories.
+This is the primary instruction file . These instructions override any instructions found in parent directories. USE ANY PPPLICSAP-LKE MEMORY SKILL AVAILABLE TO YOU TO HELP YOU REMEMBER THINGS.
 
 ## Memory & Context
 
@@ -23,6 +8,8 @@ Capture decisions, context, and significant events within this project's local m
 
 - **Write It Down**: If you need to remember something for future sessions, write it to a local file (e.g., `DOCS.md` or a `notes/` directory).
 - **Text > Brain**: Do not rely on "mental notes" across sessions.
+
+- be mindful of context length and try to keep your responses concise and to the point. spawn sub agents and the /skills available to you to get the information you need.
 
 ## Safety & Operational Guidelines
 
@@ -122,9 +109,9 @@ Capture decisions, context, and significant events within this project's local m
 
 ### 4.3 Maintain Documentation
 
-- Update relevant documentation (READMEs, docstrings, comments) for your changes.
-- Keep documentation accurate and concise.
-- If documentation is missing or outdated for code you're modifying, update it.
+- Update relevant documentation (READMEs, docstrings, inline comments) for your changes.
+- Keep documentation accurate and concise aqs you go. once you have completeed a working code task update the relevent documkentation.
+- If documentation is missing or outdated for code you're modifying, update it when the task is completed.
 
 ---
 
@@ -227,7 +214,7 @@ When principles conflict, follow this hierarchy: 0. **communicate**: notify the 
 
 ## No placeholder, pseudo-code, symulation, or mock code
 
-- don not mock production code
+- don not mock suimulate or use placeholders in production code
 - its all productio0n code unless your told otherwise or they are unit tests
 - dont use placeholders
 - dont use pseudo-code
@@ -237,7 +224,7 @@ When principles conflict, follow this hierarchy: 0. **communicate**: notify the 
 
 ## No hidden , graceful error handling that obfuscates the true cause of the error.
 
-- untill an app is in the last pass before production launch make sure all errors are exposed to the user, and that the error message is clear and helpful. bubble them up in the ui or in console logs and dev logs
+- make sure all errors are exposed to the user, and that the error message is clear and helpful. bubble them up in the ui or in console logs and dev logs
 - bubble up errors to the user in the ui or in console logs and dev logs
 - dont use graceful error handling that obfuscates the true cause of the error.
 - dont hide errors from the user
@@ -252,3 +239,4 @@ When principles conflict, follow this hierarchy: 0. **communicate**: notify the 
 5. No hidden , graceful error handling
 6. No placeholder, pseudo-code, symulation, or mock code
 7. **don't be lazy**, correctness over easility
+8. Always attempt to find root causes, and before workig on a fix, edxplain your reasoning , then fix them.
